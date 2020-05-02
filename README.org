@@ -1,0 +1,71 @@
+#+TITLE: Org-glaux 
+A personal wiki using org-mode.
+
+** Link formats
+Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-like]].
+*** Wiki link
+
+    #+BEGIN_SRC org 
+	wiki:Linux 
+    or 
+	[[wiki:Linux]]
+    or
+	[[wiki:Linux][Linux]]  
+    #+END_SRC
+
+  |---------------------------+---------------------------------------------------------|
+  | Link                      | To                                                      |
+  |---------------------------+---------------------------------------------------------|
+  | ~wiki:path/to/<pagename>~ | Absolute path: ~<org-glaux-location>/path/to/<pagename>~ |
+  | ~wiki:/<pagename>~        | Child page: ~<current_page>/<pagename>~                 |
+  | ~wiki:../~                | Parent page                                             |
+  | ~wiki:../<pagename>~      | Sibling page                                            |
+  |---------------------------+---------------------------------------------------------|
+
+*** Asset link
+#+BEGIN_SRC org
+     wiki-asset-sys:LearnLinux.pdf
+or 
+     [[wiki-asset-sys:LearnLinux.pdf]]
+or
+     [[wiki-asset-sys:LearnLinux.pdf][Book Learn Linux.pdf]]
+#+END_SRC
+
+It will open the file =~/wiki-directory/Linux/LearnLinux.pdf= with the
+default system application.
+
+** TODO TODOs [4%]
+  - [ ] Documentation [0/2]
+    - [ ] Activate github.io documentation page
+    - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
+  - [ ] README.org [0/2]
+    - [ ] Tips: LaTeX support [0/2]
+      - [ ] Use [[https://orgmode.org/manual/Include-Files.html][#+INCLUDE]] to include LaTeX ~\newcommand~
+      - [ ] html export environment & ~\newcommand~
+    - [ ] Update gifs
+  - [ ] Enhance navigation experience  [0/2]
+    - [ ] stack: push & pull
+    - [ ] Dead hyperlink (including website) highlight 
+  - [X] Lint [1/1]
+    - [X] Fix "You should depend on (emacs "24.4")" errors
+  - [ ] org-glaux's version of ~org-export-dispatch~.
+  - [ ] Fix new page overwriting header if parent directories doesn't exist.
+  - [ ] Add copy/renaming/moving page/assets facility
+  - [ ] Handle edge cases: e.g. org-file's title = empty string
+  - [ ] Fix the function which given a page returns its assets dir
+  - [ ] Consider ~org-attach~ before implementing download-related function.
+  - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
+  - [ ] In all interactive functions: check if current buffer is under an org-glaux dir
+  - [ ] Add a function which display statistics of the wiki (e.g. empty files, big files, dead links number etc.)
+  - [ ] Read-only function is necessary ? remove them.
+  - [ ] Generate html file by comparing created time with org file
+  - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
+  - [ ] Use ~completing-read~ whenever possible.
+  - [ ] Use https://gongzhitaao.org/orgcss/ as default css instead the default one.
+  - [ ] add custom group to exclude dirs and files for the backup.
+  - [ ] add link name in custom group as org-pdftools does.
+  - [ ] add this repo to MELPA
+    - [ ] change the repo name to something nice
+
+** Credits
+~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
