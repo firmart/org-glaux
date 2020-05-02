@@ -22,17 +22,6 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   | ~wiki:../<pagename>~      | Sibling page                                            |
   |---------------------------+---------------------------------------------------------|
 
-*** Asset link
-#+BEGIN_SRC org
-     wiki-asset-sys:LearnLinux.pdf
-or 
-     [[wiki-asset-sys:LearnLinux.pdf]]
-or
-     [[wiki-asset-sys:LearnLinux.pdf][Book Learn Linux.pdf]]
-#+END_SRC
-
-It will open the file =~/wiki-directory/Linux/LearnLinux.pdf= with the
-default system application.
 
 ** TODO TODOs [4%]
   - [ ] Naming rule
