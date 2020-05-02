@@ -413,7 +413,7 @@ the URL).
 	  :action (lambda (p)
 		    ;; Close all current org-glaux pages if custom value set
 		    (when org-glaux-close-root-switch
-		      (org-glaux-close)
+		      (org-glaux-close-pages)
 		      (message (format "Org-wiki pages under directory %s are saved" org-glaux-location)))
 		    (setq org-glaux-location p)
 		    (org-glaux-index)
@@ -463,7 +463,7 @@ The link type file is opened with Emacs."
   (interactive)
   (org-glaux--assets-helm-selection #'find-file))
 
-(defun org-glaux-assets-download-insert-file ()
+(defun org-glaux-insert-download ()
   "Download a file from a URL in the clibpoard and insert a link file link.
 Note: This function is synchronous and blocks Emacs."
   (interactive)
@@ -535,15 +535,15 @@ Note: This function is synchronous and blocks Emacs."
         (buffer-list))
   (message "All wiki images closed."))
 
-(defun org-glaux-insert-link ()
+(defun org-glaux-insert-select-link ()
   "Insert a Wiki link at point for a existing page."
   (interactive)
   (org-glaux--helm-selection
    (lambda (wiki-path)
      (insert (org-glaux--make-link wiki-path)))))
 
-(defun org-glaux-insert-new ()
-  "Create a new org-glaux and insert a link to it at point."
+(defun org-glaux-insert-new-link ()
+  "Create a new wiki page and insert a link to it at point."
   (interactive)
   (let ((page-name (read-string  "Page: ")))
     (save-excursion (insert (if (fboundp 'org-link-make-string)
@@ -556,16 +556,8 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (org-glaux--open-page (read-string "Page Name: ")))
 
-(defun org-glaux-html-page-open ()
-  "Open the current wiki page in the browser.  It is created if it doesn't exist yet."
-  (interactive)
-  (let ((html-file   (org-glaux--replace-extension buffer-file-name "html")))
-    (if (not (file-exists-p html-file))
-        (org-html-export-to-html))
-    (browse-url html-file)))
-
-(defun org-glaux-html-page-export ()
-  "Exports the current wiki page to html and opens it in the browser."
+(defun org-glaux-export-html-page ()
+  "Export the current wiki page to html and opens it in the browser."
   (interactive)
   (org-html-export-to-html)
   (browse-url (org-glaux--replace-extension buffer-file-name "html")))
@@ -617,9 +609,8 @@ execution."
         (pub-plist (org-glaux-make-org-publish-plist org-exporter)))
     (org-publish pub-plist t)))
 
-(defun org-glaux-export-html-sync ()
+(defun org-glaux--export-html ()
   "Export all pages to html in synchronous mode."
-  (interactive)
   (let ((org-html-htmlize-output-type "css")
         (org-html-htmlize-font-prefix "org-"))
     (org-publish (org-glaux-make-org-publish-plist 'org-html-publish-to-html)
@@ -632,17 +623,17 @@ execution."
 	(org-html-htmlize-font-prefix "org-"))
     (org-publish (org-glaux-make-org-publish-plist 'org-html-publish-to-html) t t)))
 
-(defun org-glaux-export-html ()
-"Export all pages to html.
+(defun org-glaux-export-html-sync ()
+  "Export all pages to html.
 Note: This function doesn't freeze Emacs since it starts another Emacs process."
-(interactive)
-(compile (mapconcat 'identity
-		    `(,org-glaux-emacs-path
-		      "--batch"
-		      "-l" ,org-glaux-user-init-file
-		      "-f" "org-glaux-export-html-sync"
-		      "--kill")
-		    " ")))
+  (interactive)
+  (compile (string-join 
+	    `(,org-glaux-emacs-path
+	      "--batch"
+	      "-l" ,org-glaux-user-init-file
+	      "-f" "org-glaux-export--html"
+	      "--kill")
+	    " ")))
 
 ;; TODO update this menu.
 (defun org-glaux-menu ()

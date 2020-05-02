@@ -24,16 +24,16 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
 
 
 ** TODO TODOs [12%]
-  - [-] Naming convention of functions according to their functional categories [8/10]
+  - [-] Naming convention of functions according to their functional categories [9/10]
     - [X] ~org-glaux-close-[pages|images]~: anything related to close resources
       - [X] org-glaux-close -> org-glaux-close-pages
       - [X] org-glaux-close-images	      
-    - [-] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
-      - [ ] org-glaux-export-html	      
-      - [ ] org-glaux-export-html-async   
-      - [ ] org-glaux-export-html-sync    
+    - [X] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
+      - [X] org-glaux-export-html	      
+      - [X] org-glaux-export-html-async   
+      - [X] org-glaux-export-html-sync    
       - [X] org-glaux-export-with -> org-glaux-export-as : make it really interactive
-      - [ ] merge org-glaux-html-page-export + org-glaux-html-page-open      
+      - [X] merge org-glaux-html-page-export + org-glaux-html-page-open      
     - [X] ~org-glaux-backup-*~: anything related to backup
       - [X] org-glaux-backup-make -> org-glaux-backup
     - [X] ~org-glaux-dired-*~: anything related to dired
@@ -57,14 +57,14 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
       - [X] org-glaux-index 
       - [X] org-glaux-index-frame	      
       - [X] org-glaux-index-html
-    - [-] ~org-glaux-insert-*~: anything insert text
-      - [ ] org-glaux-assets-download-insert-file -> org-glaux-insert-download
-      - [ ] org-glaux-insert-link -> org-glaux-insert-wiki
-      - [ ] org-glaux-insert-new -> TODO      
+    - [X] ~org-glaux-insert-*~: anything involving insert text
+      - [X] org-glaux-assets-download-insert-file -> org-glaux-insert-download
+      - [X] org-glaux-insert-link -> org-glaux-insert-select-link
+      - [X] org-glaux-insert-new ->  org-glaux-insert-new-link    
       - [X] org-glaux-assets-insert-file -> org-glaux-insert-asset
       - [X] org-glaux-assets-insert-image -> delete
-    - [X] Miscellaneous:
-      - [X] org-glaux-new		      
+    - [-] Miscellaneous:
+      - [ ] org-glaux-new		      
       - [X] org-glaux-website	      
       - [X] org-glaux-menu		      
       - [X] org-glaux-help		      
