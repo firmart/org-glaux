@@ -4,7 +4,7 @@
 
 ;; Author: Firmin Martin
 ;; Maintainer: Firmin Martin
-;; Version: 5.1
+;; Version: 0.1
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
 ;; Package-Requires: ((helm-core "2.0") (cl-lib "0.5") (emacs "25.1") (org "7.0"))
@@ -26,7 +26,7 @@
 
 ;;; Commentary:
 
-;; Org-glaux is a org-mode extension that provides tools to manage and
+;; Org-glaux is an org-mode extension that provides tools to manage and
 ;; build a desktop wiki where each wiki page is an org-mode file.
 ;;
 
@@ -324,34 +324,12 @@ Argument WIKI-PATH: the link which is a wiki-path."
 (defun org-glaux--wiki-export (wiki-path desc format)
   "Export a wiki page link from Org files."
   (cl-case format
-    (html (format "<a href='%s'>%s</a>"
-		  (file-relative-name (org-glaux--replace-extension
-				       (org-glaux--page->file wiki-path) "html") ".")
-		  (or desc wiki-path)))
+    (html (format "<a href='%s'>%s</a>" wiki-path (or desc wiki-path)))
     (ascii (format "%s (%s)" (or desc wiki-path) wiki-path))
     (latex (format "\\href{%s}{%s}"
 		   (file-relative-name
 		    (expand-file-name wiki-path org-glaux-location) ".")
 		   (or desc wiki-path)))))
-
-;; Hyperlinks to asset files that are opened with system applications.
-;; wiki-assets-sys:<filename> or [[wiki-assets-sys:<filename>][<description>]
-(if (fboundp 'org-link-set-parameters)
-    (org-link-set-parameters "wiki-assets-sys"
-			     :follow #'org-glaux--wiki-assets-sys-open
-			     :export #'org-glaux--wiki-assets-sys-export)
-  (add-hook 'org-mode-hook
-	    ;; obsolete since org 9.0
-	    (lambda () (org-add-link-type "wiki-assets-sys" 'org-glaux--wiki-assets-sys-open 'org-glaux--wiki-assets-sys-export))))
-
-
-(defun org-glaux--wiki-assets-sys-open (filename)
-  "Open with default system app an org-glaux page's asset given its FILENAME."
-  (org-glaux--xdg-open (org-glaux--current-page-assets-file filename)))
-
-(defun org-glaux--wiki-assets-sys-export (path desc format)
-  "Export a wiki page asset's link from Org files."
-  (org-glaux--wiki-export (org-glaux--current-page-assets-file path) desc format))
 
 (defun org-glaux--helm-selection (callback)
   "Open a helm menu to select the wiki page and invokes the CALLBACK function."
@@ -424,7 +402,7 @@ the URL).
   (interactive)
   (command-apropos "org-glaux-[^-]"))
 
-(defun org-glaux-switch-root ()
+(defun org-glaux-select-root ()
   "Switch org-glaux root directory."
   (interactive)
   (helm :sources
@@ -461,7 +439,7 @@ The page is created if it doesn't exist."
   (with-selected-frame (make-frame)
     (org-glaux-index)))
 
-(defun org-glaux-assets-dired ()
+(defun org-glaux-dired-assets ()
   "Open the asset directory of current wiki page."
   (interactive)
   (let ((pagename (org-glaux--current-page-name)))
@@ -469,63 +447,21 @@ The page is created if it doesn't exist."
     (org-glaux--assets-make-dir pagename)
     (dired (org-glaux--assets-get-dir buffer-file-name))))
 
-(defun org-glaux-assets-insert ()
-  "Insert at point a wiki-assets-sys link to a current page's asset file.
-The link type wiki-assets-sys:<asset-file> is opened with default system's app."
-  (interactive)
-  (org-glaux--assets-helm-selection
-   (lambda (file)
-     (insert (format "[[wiki-assets-sys:%s][%s]]"
-                     (file-name-nondirectory file)
-                     (read-string "Description: " (file-name-nondirectory file)))))))
-
-(defun org-glaux-assets-insert-file ()
+(defun org-glaux-insert-asset ()
   "Insert at point a file link to a current page's asset file.
 The link type file is opened with Emacs."
   (interactive)
   (org-glaux--assets-helm-selection
    (lambda (file)
      (insert (if (fboundp 'org-link-make-string)
-		 (org-link-make-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)))
-	       (org-make-link-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file))) ;; obsolete since org 9.3
+		 (org-link-make-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file)))
+	       (org-make-link-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file))) ;; obsolete since org 9.3
 	       (file-name-nondirectory file))))))
 
-(defun org-glaux-assets-insert-image ()
-  "Insert link file:<page>/<file> to images asset file at point.
-This command is similar to `org-glaux-assets-insert-file' but it inserts a link
-in this way: [[file:Linux/logo.png][file:Linux/logo.png/]]."
-  (interactive)
-  (org-glaux--assets-helm-selection
-   (lambda (file)
-     (save-excursion
-       (insert (if (fboundp 'org-link-make-string)
-		   (org-link-make-string (format "file:%s/%s"
-						 (org-glaux--current-page-name)
-						 (file-name-nondirectory file)))
-		 ;; obsolete since org 9.3
-		 (org-make-link-string
-		  (format "file:%s/%s"
-			  (org-glaux--current-page-name)
-			  (file-name-nondirectory file)))))))))
-
-(defun org-glaux-assets-find-file ()
+(defun org-glaux-select-asset ()
   "Open in Emacs a selected asset file of the current page from a menu."
   (interactive)
   (org-glaux--assets-helm-selection #'find-file))
-
-(defun org-glaux-assets-find-sys ()
-  "Open with system's app a selected asset file of the current page from a menu."
-  (interactive)
-  (org-glaux--assets-helm-selection #'org-glaux--xdg-open))
-
-(defun org-glaux-assets-download-insert-sys ()
-  "Download a file from a URL and insert a wiki-assets-sys link.
-Note: This function is synchronous and blocks Emacs."
-  (interactive)
-  (org-glaux--assets-download-hof
-   (lambda (output-file)
-     (save-excursion (insert (format "[[wiki-assets-sys:%s][%s]]"
-                                     output-file output-file))))))
 
 (defun org-glaux-assets-download-insert-file ()
   "Download a file from a URL in the clibpoard and insert a link file link.
@@ -535,27 +471,20 @@ Note: This function is synchronous and blocks Emacs."
    (lambda (output-file)
      (save-excursion (insert (format "[[file:%s/%s][%s]]"
 				     (org-glaux--current-page-name) output-file output-file))))))
-(defun org-glaux-helm ()
+(defun org-glaux-select-page ()
   "Open a wiki page with helm."
   (interactive)
   (org-glaux--helm-selection #'org-glaux--open-page))
 
-(defun org-glaux-helm-read-only ()
-  "Open a wiki page with helm in read-only mode."
-  (interactive)
-  (org-glaux--helm-selection (lambda (pagename)
-			      (find-file-read-only
-			       (org-glaux--page->file pagename)))))
-
-(defun org-glaux-helm-frame ()
+(defun org-glaux-select-frame ()
   "Browser the wiki files using helm and opens it in a new frame."
   (interactive)
   (org-glaux--helm-selection  (lambda (act)
-                               (with-selected-frame (make-frame)
-                                 (set-frame-name (concat "Org-wiki: " act))
-                                 (org-glaux--open-page act)))))
+				(with-selected-frame (make-frame)
+				  (set-frame-name (concat "Org-wiki: " act))
+				  (org-glaux--open-page act)))))
 
-(defun org-glaux-helm-switch ()
+(defun org-glaux-select-buffer ()
   "Switch between org-glaux page buffers."
   (interactive)
   (helm :sources
@@ -566,7 +495,7 @@ Note: This function is synchronous and blocks Emacs."
 	  :fuzzy-match t
 	  :action 'switch-to-buffer)))
 
-(defun org-glaux-helm-html ()
+(defun org-glaux-select-html ()
   "Browse a wiki page in html format using helm.  It is created if it doesn't exist yet."
   (interactive)
   (helm :sources
@@ -580,7 +509,7 @@ Note: This function is synchronous and blocks Emacs."
 			    (org-html-export-to-html)))
 		      (browse-url html-file))))))
 
-(defun org-glaux-close ()
+(defun org-glaux-close-pages ()
   "Close all opened wiki pages buffer and save them."
   (interactive)
   (mapc (lambda (b)
@@ -641,15 +570,15 @@ Note: This function is synchronous and blocks Emacs."
   (org-html-export-to-html)
   (browse-url (org-glaux--replace-extension buffer-file-name "html")))
 
-(defun org-glaux-search (pattern)
+(defun org-glaux-search-regex (pattern)
   "Search all wiki pages that contain a PATTERN (regexp or name)."
   (interactive "sorg-glaux - Search for: ")
   (grep-compute-defaults) ;; Set up grep-find-command
-  (rgrep pattern "*\\.org" org-glaux-location))
+  (rgrep pattern "*.org" org-glaux-location))
 
 ;; TODO rename this function to something with "dired"
-(defun org-glaux-assets-helm ()
-  "Open the assets directory of a wiki page."
+(defun org-glaux-select-assets-dired ()
+  "Select and open with dired the assets directory of a wiki page."
   (interactive)
   (org-glaux--helm-selection
    (lambda (page)
@@ -671,7 +600,7 @@ Argument ORG-EXPORTER an org-exporter."
             (org-combine-plists (cdr plist-base) org-glaux-publish-plist))
     plist-base))
 
-(defun org-glaux-export-with (org-exporter)
+(defun org-glaux-export-as (org-exporter)
   "Export all pages to a given format.
 ORG-EXPORTER is a function that exports an `org-mode' page to a specific format
 like html.  It can be for instance:
@@ -701,9 +630,7 @@ execution."
   (interactive)
   (let ((org-html-htmlize-output-type "css")
 	(org-html-htmlize-font-prefix "org-"))
-    (org-publish (org-glaux-make-org-publish-plist 'org-html-publish-to-html)
-		 t
-		 t)))
+    (org-publish (org-glaux-make-org-publish-plist 'org-html-publish-to-html) t t)))
 
 (defun org-glaux-export-html ()
 "Export all pages to html.
@@ -810,8 +737,8 @@ Note: This command requires Python3 installed."
 	      (kill-process (get-process pname))
 	      (message "Server stopped.")))))
 
-(defun org-glaux-find-dired ()
-  "Show all org-glaux files in all sub-directories of `org-glaux-location'."
+(defun org-glaux-dired-files ()
+  "Show all wiki files in all sub-directories of `org-glaux-location'."
   (interactive)
   (find-dired org-glaux-location "-name '*.org'"))
 
@@ -842,7 +769,7 @@ Note: This command requires Python3 installed."
 
 ;; ============ Backup Commands =============== ;;
 
-(defun org-glaux-backup-make ()
+(defun org-glaux-backup ()
   "Make a org-glaux backup."
   (interactive)
   (let* ((zipfile            (concat "org-glaux-" (format-time-string "%Y-%m-%d") ".zip"))
@@ -874,7 +801,7 @@ Note: This command requires Python3 installed."
            (message "Backup done.")
            (insert  "\nBackup done.  Run M-x org-glaux-backup-dir to open backup directory.")))))))
 
-(defun org-glaux-backup-dired ()
+(defun org-glaux-dired-backup ()
   "Open org-glaux backup directory in dired mode."
   (interactive)
   ;; Create org-glaux backup location directory if doesn't exist.

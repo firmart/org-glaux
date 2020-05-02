@@ -23,52 +23,51 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   |---------------------------+---------------------------------------------------------|
 
 
-** TODO TODOs [4%]
-  - [ ] Naming rule
-    - [ ] ~org-glaux-close-[pages|images]~: anything related to close resources
-      - [ ] org-glaux-close -> org-glaux-close-pages
-      - [ ] org-glaux-close-images	      
-    - [ ] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
+** TODO TODOs [12%]
+  - [-] Naming convention of functions according to their functional categories [8/10]
+    - [X] ~org-glaux-close-[pages|images]~: anything related to close resources
+      - [X] org-glaux-close -> org-glaux-close-pages
+      - [X] org-glaux-close-images	      
+    - [-] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
       - [ ] org-glaux-export-html	      
       - [ ] org-glaux-export-html-async   
       - [ ] org-glaux-export-html-sync    
-      - [ ] org-glaux-export-with -> org-glaux-export-as : make it really interactive
+      - [X] org-glaux-export-with -> org-glaux-export-as : make it really interactive
       - [ ] merge org-glaux-html-page-export + org-glaux-html-page-open      
-    - [ ] ~org-glaux-backup-*~: anything related to backup
-      - [ ] org-glaux-backup-make	      
-    - [ ] ~org-glaux-switch-*~: anything related to switch wiki
-    - [ ] ~org-glaux-dired-*~: anything related to dired
-      - [ ] org-glaux-assets-dired -> org-glaux-dired-assets      
-      - [ ] org-glaux-find-dired	-> org-glaux-dired-find
-      - [ ] org-glaux-backup-dired -> org-glaux-dired-backup
-    - [ ] ~org-glaux-search-*~: anything related to searching
-      - [ ] org-glaux-search -> org-glaux-search-regex	      
-    - [ ] ~org-glaux-select-*~: anything related to select/open things
-      - [ ] org-glaux-assets-helm -> org-glaux-select-assets
-      - [ ] org-glaux-helm -> org-glaux-select-page	      
-      - [ ] org-glaux-helm-frame -> org-glaux-select-frame
-      - [ ] org-glaux-helm-html -> org-glaux-select-html      
-      - [ ] org-glaux-helm-switch -> org-glaux-select-buffer
-      - [ ] org-glaux-switch-root -> org-glaux-select-root
-      - [ ] org-glaux-assets-find-sys -> remove
-      - [ ] org-glaux-assets-find-file -> org-glaux-select-asset  
-    - [ ] ~org-glaux-server-*~: anything related to server
-      - [ ] org-glaux-server-toggle -> org-glaux-server-start
-    - [ ] ~org-glaux-index-*~: anything related to the index page
-      - [ ] org-glaux-index 
-      - [ ] org-glaux-index-frame	      
-      - [ ] org-glaux-index-html
-    - [ ] ~org-glaux-insert-*~: anything insert text
+    - [X] ~org-glaux-backup-*~: anything related to backup
+      - [X] org-glaux-backup-make -> org-glaux-backup
+    - [X] ~org-glaux-dired-*~: anything related to dired
+      - [X] org-glaux-assets-dired -> org-glaux-dired-assets      
+      - [X] org-glaux-find-dired	-> org-glaux-dired-files
+      - [X] org-glaux-backup-dired -> org-glaux-dired-backup
+    - [X] ~org-glaux-search-*~: anything related to searching
+      - [X] org-glaux-search -> org-glaux-search-regex	      
+    - [X] ~org-glaux-select-*~: anything related to select/open things
+      - [X] org-glaux-assets-helm -> org-glaux-select-assets-dired
+      - [X] org-glaux-helm -> org-glaux-select-page	      
+      - [X] org-glaux-helm-frame -> org-glaux-select-frame
+      - [X] org-glaux-helm-html -> org-glaux-select-html      
+      - [X] org-glaux-helm-switch -> org-glaux-select-buffer
+      - [X] org-glaux-switch-root -> org-glaux-select-root
+      - [X] org-glaux-assets-find-sys -> remove
+      - [X] org-glaux-assets-find-file -> org-glaux-select-asset  
+    - [X] ~org-glaux-server-*~: anything related to server
+      - [X] org-glaux-server-toggle 
+    - [X] ~org-glaux-index-*~: anything related to the index page
+      - [X] org-glaux-index 
+      - [X] org-glaux-index-frame	      
+      - [X] org-glaux-index-html
+    - [-] ~org-glaux-insert-*~: anything insert text
       - [ ] org-glaux-assets-download-insert-file -> org-glaux-insert-download
-      - [ ] org-glaux-insert-link	      
+      - [ ] org-glaux-insert-link -> org-glaux-insert-wiki
       - [ ] org-glaux-insert-new -> TODO      
-      - [ ] org-glaux-assets-insert-file -> org-glaux-insert-asset
-      - [ ] org-glaux-assets-insert-image -> delete
-    - [ ] Miscellaneous:
-      - [ ] org-glaux-new		      
-      - [ ] org-glaux-website	      
-      - [ ] org-glaux-menu		      
-      - [ ] org-glaux-help		      
+      - [X] org-glaux-assets-insert-file -> org-glaux-insert-asset
+      - [X] org-glaux-assets-insert-image -> delete
+    - [X] Miscellaneous:
+      - [X] org-glaux-new		      
+      - [X] org-glaux-website	      
+      - [X] org-glaux-menu		      
+      - [X] org-glaux-help		      
   - [ ] fix asset download
   - [ ] Documentation [0/2]
     - [ ] Activate github.io documentation page
@@ -87,12 +86,12 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   - [ ] Fix new page overwriting header if parent directories doesn't exist.
   - [ ] Add copy/renaming/moving page/assets facility
   - [ ] Handle edge cases: e.g. org-file's title = empty string
-  - [ ] Fix the function which given a page returns its assets dir
+  - [X] Fix the function which given a page returns its assets dir
   - [ ] Consider ~org-attach~ before implementing download-related function.
   - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
   - [ ] In all interactive functions: check if current buffer is under an org-glaux dir
   - [ ] Add a function which display statistics of the wiki (e.g. empty files, big files, dead links number etc.)
-  - [ ] Read-only function is necessary ? remove them.
+  - [X] Read-only function is necessary ? remove them.
   - [ ] Generate html file by comparing created time with org file
   - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
   - [ ] Use ~completing-read~ whenever possible.
