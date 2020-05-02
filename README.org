@@ -1,5 +1,5 @@
 #+TITLE: Org-glaux 
-A personal wiki using org-mode.
+A personal wiki using the wiseness of org-mode.
 
 ** Link formats
 Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-like]].
@@ -35,6 +35,52 @@ It will open the file =~/wiki-directory/Linux/LearnLinux.pdf= with the
 default system application.
 
 ** TODO TODOs [4%]
+  - [ ] Naming rule
+    - [ ] ~org-glaux-close-[pages|images]~: anything related to close resources
+      - [ ] org-glaux-close -> org-glaux-close-pages
+      - [ ] org-glaux-close-images	      
+    - [ ] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
+      - [ ] org-glaux-export-html	      
+      - [ ] org-glaux-export-html-async   
+      - [ ] org-glaux-export-html-sync    
+      - [ ] org-glaux-export-with -> org-glaux-export-as : make it really interactive
+      - [ ] merge org-glaux-html-page-export + org-glaux-html-page-open      
+    - [ ] ~org-glaux-backup-*~: anything related to backup
+      - [ ] org-glaux-backup-make	      
+    - [ ] ~org-glaux-switch-*~: anything related to switch wiki
+    - [ ] ~org-glaux-dired-*~: anything related to dired
+      - [ ] org-glaux-assets-dired -> org-glaux-dired-assets      
+      - [ ] org-glaux-find-dired	-> org-glaux-dired-find
+      - [ ] org-glaux-backup-dired -> org-glaux-dired-backup
+    - [ ] ~org-glaux-search-*~: anything related to searching
+      - [ ] org-glaux-search -> org-glaux-search-regex	      
+    - [ ] ~org-glaux-select-*~: anything related to select/open things
+      - [ ] org-glaux-assets-helm -> org-glaux-select-assets
+      - [ ] org-glaux-helm -> org-glaux-select-page	      
+      - [ ] org-glaux-helm-frame -> org-glaux-select-frame
+      - [ ] org-glaux-helm-html -> org-glaux-select-html      
+      - [ ] org-glaux-helm-switch -> org-glaux-select-buffer
+      - [ ] org-glaux-switch-root -> org-glaux-select-root
+      - [ ] org-glaux-assets-find-sys -> remove
+      - [ ] org-glaux-assets-find-file -> org-glaux-select-asset  
+    - [ ] ~org-glaux-server-*~: anything related to server
+      - [ ] org-glaux-server-toggle -> org-glaux-server-start
+    - [ ] ~org-glaux-index-*~: anything related to the index page
+      - [ ] org-glaux-index 
+      - [ ] org-glaux-index-frame	      
+      - [ ] org-glaux-index-html
+    - [ ] ~org-glaux-insert-*~: anything insert text
+      - [ ] org-glaux-assets-download-insert-file -> org-glaux-insert-download
+      - [ ] org-glaux-insert-link	      
+      - [ ] org-glaux-insert-new -> TODO      
+      - [ ] org-glaux-assets-insert-file -> org-glaux-insert-asset
+      - [ ] org-glaux-assets-insert-image -> delete
+    - [ ] Miscellaneous:
+      - [ ] org-glaux-new		      
+      - [ ] org-glaux-website	      
+      - [ ] org-glaux-menu		      
+      - [ ] org-glaux-help		      
+  - [ ] fix asset download
   - [ ] Documentation [0/2]
     - [ ] Activate github.io documentation page
     - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
@@ -66,6 +112,7 @@ default system application.
   - [ ] add link name in custom group as org-pdftools does.
   - [ ] add this repo to MELPA
     - [ ] change the repo name to something nice
+  - [ ] support ivy
 
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
