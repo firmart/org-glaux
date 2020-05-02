@@ -23,8 +23,8 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   |---------------------------+---------------------------------------------------------|
 
 
-** TODO TODOs [12%]
-  - [-] Naming convention of functions according to their functional categories [9/10]
+** TODO TODOs [20%]
+  - [X] Naming convention of functions according to their functional categories [10/10]
     - [X] ~org-glaux-close-[pages|images]~: anything related to close resources
       - [X] org-glaux-close -> org-glaux-close-pages
       - [X] org-glaux-close-images	      
@@ -63,12 +63,12 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
       - [X] org-glaux-insert-new ->  org-glaux-insert-new-link    
       - [X] org-glaux-assets-insert-file -> org-glaux-insert-asset
       - [X] org-glaux-assets-insert-image -> delete
-    - [-] Miscellaneous:
-      - [ ] org-glaux-new		      
+    - [X] Miscellaneous:
+      - [X] org-glaux-new -> org-glaux-new-page	      
       - [X] org-glaux-website	      
       - [X] org-glaux-menu		      
       - [X] org-glaux-help		      
-  - [ ] fix asset download
+  - [X] fix asset download
   - [ ] Documentation [0/2]
     - [ ] Activate github.io documentation page
     - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
@@ -104,3 +104,4 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
 
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
+
