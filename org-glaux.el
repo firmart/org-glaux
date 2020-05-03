@@ -108,7 +108,7 @@ You can toggle read-only mode with \\<read-only-mode>."
 ;; Path to init file like init.el used by function org-glaux-html-export
 ;; The user can set for a more lightweight file in order to speed up the
 ;; exporting speed.
-(defcustom org-glaux-user-init-file (concat (file-name-as-directory user-emacs-directory) "init.el")
+(defcustom org-glaux-user-init-file (concat gnus-home-directory ".emacs.el")
   "Path to init.el file used for asynchronous export."
   :type 'file
   :group 'org-glaux)

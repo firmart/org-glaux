@@ -1,6 +1,22 @@
 #+TITLE: Org-glaux 
 Glaux (/γλαῦξ/) is a personal wiki using the wiseness of org-mode.
 
+** Installation
+   
+Recommend configuration:
+
+#+begin_src emacs-lisp
+(use-package org-glaux
+    :pin manual
+    :load-path "packages/org-glaux/"
+    :bind ("C-c w" . org-glaux-index)
+    :config 
+    ;; Wikis location. default: '("~/org/wiki")
+    (setq org-glaux-location-list '("~/Org/wiki" "~/Org/wiki2")) 
+    ;; Destination to generate backup. default: nil
+    (setq org-glaux-backup-location "~/Org/wiki/index/"))
+#+end_src
+
 ** Link formats
 Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-like]].
 *** Wiki link
@@ -23,7 +39,7 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   |---------------------------+---------------------------------------------------------|
 
 
-** TODO TODOs [20%]
+** TODO TODOs [23%]
   - [X] Naming convention of functions according to their functional categories [10/10]
     - [X] ~org-glaux-close-[pages|images]~: anything related to close resources
       - [X] org-glaux-close -> org-glaux-close-pages
@@ -98,10 +114,12 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   - [ ] Use ~completing-read~ whenever possible.
   - [ ] Use https://gongzhitaao.org/orgcss/ as default css instead the default one.
   - [ ] add custom group to exclude dirs and files for the backup.
-  - [ ] add link name in custom group as org-pdftools does.
+  - [ ] add link name in custom group as ~org-pdftools~ does.
   - [ ] add this repo to MELPA
-    - [ ] change the repo name to something nice
+    - [ ] meet CONTRIBUTING requirements
+  - [X] change the repo name to something nice
   - [ ] support ivy
+  - [ ] provide key-map + minor-mode? (to make local keybindings possible)
 
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
