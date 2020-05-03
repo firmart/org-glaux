@@ -246,6 +246,7 @@ execution."
 ;;;; Index
 (defun org-glaux-index ()
   "Open the index page: <org-glaux-location>/index.org.
+
 The page is created if it doesn't exist."
   (interactive)
   (org-glaux--init-location)
@@ -307,50 +308,25 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (command-apropos "org-glaux-"))
 
-;; TODO update this menu.
-(defun org-glaux-menu ()
-  "Optional command to build an utility menu."
+(defun org-glaux-menu-enable ()
+  "Build a menu for org-glaux."
   (interactive)
-  (easy-menu-define org-wik-menu global-map "Org-glaux"
-
-    `("org-glaux"
-      ("Main"
-       ["Go to Index page" (org-glaux-index)]
-
-       ["---" nil]
-       ["Browsing" nil]
-       ["Browse page" (org-glaux-helm)]
-       ["Browse page in other frame" (org-glaux-helm-frame)]
-       ["Browse pages in read-only mode" (org-glaux-helm-read-only)]
-       ["---" nil]
-       ["Wiki Directory" nil]
-       ["Close all pages" (org-glaux-close)]
-
-       ["---" nil]
-       ["Html export" nil]
-       ["Open index page (html) in the browser" (org-glaux-index-html)]
-       ["Export all pages to html" (org-glaux-export-html)]
-       ["Help - Show all org-glaux commands" (org-glaux-help)])
-      ["---"  nil]
-      ("Page Commands"
-       ["Browse current page asset directory."
-        (org-glaux-assets-dired)]
-       ["Browse current page asset directory with system's file manager."
-        (org-glaux-assets-open)]
-
-       ["Insert a link to a wiki page" (org-glaux-insert)]
-       ["Insert a link of type wiki-assets-sys at point."
-        (org-glaux-assets-insert)]
-       ["Insert a link of type file:<page>/<asset> at point."
-	(org-glaux-assets-insert-file)
-	]
-       ["Download an asset file and insert a wiki-assets-sys link at point."
-	(org-glaux-assets-download-insert1)
-	]
-
-       ["Download an asset file and insert a link at point of type file:<page>/<file.pdf>."
-	(org-glaux-assets-download-insert2)])
-      ["---"  nil])))
+  (easy-menu-define org-glaux-menu global-map "Org-glaux"
+    (list "org-glaux"
+	  (org-glaux--easy-menu-entry "Backup" "org-glaux-backup")
+	  (org-glaux--easy-menu-entry "Close" "org-glaux-close")
+	  (org-glaux--easy-menu-entry "Dired" "org-glaux-dired")
+	  (org-glaux--easy-menu-entry "Export" "org-glaux-export")
+	  (org-glaux--easy-menu-entry "Index" "org-glaux-index")
+	  (org-glaux--easy-menu-entry "Insert" "org-glaux-insert")
+	  (org-glaux--easy-menu-entry "Navigation" "org-glaux-navi")
+	  (org-glaux--easy-menu-entry "Search" "org-glaux-search")
+	  (org-glaux--easy-menu-entry "Select" "org-glaux-select")
+	  (org-glaux--easy-menu-entry "Server" "org-glaux-server")
+	  ["---" nil]
+	  (list "Miscellaneous"
+		(vector (documentation 'org-glaux-new-page) 'org-glaux-new-page)
+		(vector (documentation 'org-glaux-website) 'org-glaux-website)))))
 
 (defun org-glaux-new-page ()
   "Create a new wiki page and open it without inserting a link."
@@ -653,6 +629,25 @@ exist."
     (if (not (file-exists-p assets-dir))
         (make-directory assets-dir t))))
 
+;;;; Internal -- Menu
+(defun org-glaux--easy-menu-entry (entry-name prefix)
+  "Create a menu entry with ENTRY-NAME including functions prefixed by PREFIX."
+  ;; (entry-name [doc_f1 f1] [doc_f2 f2] ...)
+  (cons entry-name
+	(mapcar 
+	 (lambda (f)
+	   ;; [<func-doc_first_line> <func>]
+	   (vector (car (split-string (documentation (intern f)) "\n"))
+		   (intern f)))
+	 ;; list of functions prefixed by PREFIX
+	 (let (glaux-list)
+	   (mapatoms (lambda (x)
+		       (when (and (fboundp x)
+				(string-prefix-p prefix (symbol-name x))) 
+			 (push (symbol-name x) glaux-list ))))
+	   glaux-list))))
+
+
 ;;;; Internal -- Org properties
 (defun org-glaux--global-props (fpath &optional property)
   "Return the plists of global org properties of a FPATH.
@@ -762,41 +757,6 @@ Argument ORG-EXPORTER an org-exporter."
 				 (org-glaux--assets-page-files
 				  (org-glaux--assets-get-dir buffer-file-name)))))
     (funcall callback (org-glaux--current-page-assets-file target))))
-
-;;;; Internal -- System application
-(defun org-glaux--xdg-open (filename)
-  "Open a file FILENAME with default system application.
-
-- Running in Linux or BSD invokes the script xdg-open
-- Running in Windows invokes cmd.exe
-- Running in Mac OSX invokes open"
-  (cl-case system-type
-    ;; Linux
-    (gnu/linux      (let ((process-connection-type  nil))
-                      (start-process
-		       "proc"
-		       nil
-		       ;; Command
-		       "xdg-open" (expand-file-name filename))))
-    ;; Free BSD OS
-    (gnu/kfreebsd    (let ((process-connection-type  nil))
-                       (start-process
-			"proc"
-			nil
-			;; Command
-			"xdg-open" (expand-file-name filename))))
-    ;; Mac OSX
-    (darwin        (start-process
-                    "proc"
-                    nil
-                    ;; Command
-                    "open" (concat  (expand-file-name filename))))
-    ;; Windows 7, 8, 10 - Kernel NT
-    (windows-nt   (start-process
-                   "proc"
-                   nil
-                   ;; Command
-                   "cmd"  "/C"  "start" "" (expand-file-name filename))))) ;; End of org-glaux/xdg-open
 
 ;;; Links
 ;;;; Wiki link
