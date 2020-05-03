@@ -7,7 +7,7 @@
 ;; Version: 0.1
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
-;; Package-Requires: ((helm-core "2.0") (cl-lib "0.5") (emacs "25.1") (org "9.0"))
+;; Package-Requires: ((cl-lib "0.5") (emacs "25.1") (org "9.0"))
 
 
 ;; This program is free software: you can redistribute it and/or
@@ -31,7 +31,6 @@
 ;; external libraries
 (require 'org)
 (require 'ox-html)
-(require 'helm)
 
 ;; built-in Emacs lib
 (require 'cl-lib)     ;; Common-lisp emulation library
@@ -237,8 +236,8 @@ execution."
   (browse-url (org-glaux--replace-extension buffer-file-name "html")))
 
 (defun org-glaux-export-html-sync ()
-  (interactive)
   "Export all pages to html in synchronous mode."
+  (interactive)
   (let ((org-html-htmlize-output-type "css")
         (org-html-htmlize-font-prefix "org-"))
     (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
@@ -270,7 +269,7 @@ The page is created if it doesn't exist."
   "Insert at point a file link to a current page's asset file.
 The link type file is opened with Emacs."
   (interactive)
-  (org-glaux--assets-helm-selection
+  (org-glaux--assets-select
    (lambda (file)
      (insert (if (fboundp 'org-link-make-string)
 		 (org-link-make-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file)))
@@ -298,7 +297,7 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-insert-select-link ()
   "Insert a Wiki link at point for a existing page."
   (interactive)
-  (org-glaux--helm-selection
+  (org-glaux--select
    (lambda (wiki-path)
      (insert (org-glaux--make-link wiki-path)))))
 
@@ -388,12 +387,12 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-select-asset ()
   "Open in Emacs a selected asset file of the current page from a menu."
   (interactive)
-  (org-glaux--assets-helm-selection #'find-file))
+  (org-glaux--assets-select #'org-open-file))
 
 (defun org-glaux-select-assets-dired ()
   "Select and open with dired the assets directory of a wiki page."
   (interactive)
-  (org-glaux--helm-selection
+  (org-glaux--select
    (lambda (page)
      (org-glaux--assets-make-dir page)
      (dired (org-glaux--assets-get-dir page)))))
@@ -401,58 +400,57 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-select-buffer ()
   "Switch between org-glaux page buffers."
   (interactive)
-  (helm :sources
-	(helm-build-sync-source "Wiki Pages"
-	  :candidates (mapcar (lambda (b)
-				(cons (file-name-base (buffer-file-name b)) b))
-			      (org-glaux--get-buffers))
-	  :fuzzy-match t
-	  :action 'switch-to-buffer)))
+  (let ((target (completing-read "Wiki pages:"
+				 (mapcar (lambda (b) (org-glaux--file-wiki-path (buffer-file-name b)))
+					 (org-glaux--get-buffers))))
+	(action 'org-glaux--wiki-follow))
+    (funcall action target)))
 
 (defun org-glaux-select-frame ()
-  "Browser the wiki files using helm and opens it in a new frame."
+  "Select a wiki page and open it in a new frame."
   (interactive)
-  (org-glaux--helm-selection  (lambda (act)
-				(with-selected-frame (make-frame)
-				  (set-frame-name (concat "Org-glaux: " act))
-				  (org-glaux--wiki-follow act)))))
+  (org-glaux--select  (lambda (act)
+			(with-selected-frame (make-frame)
+			  (set-frame-name (concat "Org-glaux: " act))
+			  (org-glaux--wiki-follow act)))))
 
 (defun org-glaux-select-html ()
-  "Browse a wiki page in html format using helm.  It is created if it doesn't exist yet."
+  "Select a wiki page and open it in html.
+
+The html page is created if it doesn't exist yet."
   (interactive)
-  (helm :sources
-	(helm-build-sync-source "Wiki Pages"
-	  :candidates (org-glaux--page-files)
-	  :fuzzy-match t
-	  :action (lambda (fpath)
-		    (let ((html-file   (org-glaux--replace-extension fpath "html")))
-		      (if (not (file-exists-p html-file))
-			  (with-current-buffer (find-file fpath)
-			    (org-html-export-to-html)))
-		      (browse-url html-file))))))
+  (let ((target (completing-read "Wiki pages:" (org-glaux--page-files)))
+	(action
+	 (lambda (fpath)
+	   (let ((html-file   (org-glaux--replace-extension fpath "html")))
+	     (if (not (file-exists-p html-file))
+		 (with-current-buffer (find-file fpath)
+		   (org-html-export-to-html)))
+	     (browse-url html-file)))))
+    (funcall action target)))
 
 (defun org-glaux-select-page ()
-  "Open a wiki page with helm."
+  "Select and open a wiki page."
   (interactive)
-  (org-glaux--helm-selection #'org-glaux--wiki-follow))
+  (org-glaux--select #'org-glaux--wiki-follow))
 
 (defun org-glaux-select-root ()
   "Switch org-glaux root directory."
   (interactive)
-  (helm :sources
-	(helm-build-sync-source "Org-glaux root directories"
-	  :candidates (mapcar (lambda (p) (cons (format "%s - %s" (file-name-nondirectory p) p) p))
-			      (mapcar #'string-trim org-glaux-location-list))
-	  :fuzzy-match t
-	  :action (lambda (p)
-		    ;; Close all current org-glaux pages if custom value set
-		    (when org-glaux-close-root-switch
-		      (org-glaux-close-pages)
-		      (message (format "Org-glaux pages under directory %s are saved" org-glaux-location)))
-		    (setq org-glaux--page-history nil) ;; clean history of the previous wiki
-		    (setq org-glaux-location p)
-		    (org-glaux-index)
-		    (message (format "Org-glaux root directory set to: %s" p))))))
+  (let ((target (completing-read "Org-glaux root directories:" org-glaux-location-list))
+	(action
+	 (lambda (p)
+	   ;; If the selected wiki is the same, no need to erase navigation history
+	   (unless (eq p org-glaux-location)
+	     ;; Close all current org-glaux pages if custom value set
+	     (when org-glaux-close-root-switch
+	       (org-glaux-close-pages)
+	       (message (format "Org-glaux pages under directory %s are saved" org-glaux-location)))
+	     (setq org-glaux--page-history nil) ;; clean history of the previous wiki
+	     (setq org-glaux-location p)
+	     (org-glaux-index)
+	     (message (format "Org-glaux root directory set to: %s" p))))))
+    (funcall action target)))
 ;;;; Server
 
 ;; Despite this function was implemented as a interface to
@@ -633,15 +631,15 @@ Argument FORMAT format to export."
 	  (string-suffix-p "#"  b))))
    (directory-files-recursively org-glaux-location "\\.org$")))
 
-;; https://github.com/caiorss/org-wiki/issues/25
 (defun org-glaux--wiki-face (wiki-path)
   "Defines a dynamic face for wiki links.
 Inheriting from `org-link' but making the text red when the WIKI-PATH doesn't
 exist."
   (let ((fpath (org-glaux--page->file wiki-path)))
-    (if (not (file-exists-p fpath))
-        '(:inherit org-link :foreground "red")
-      'org-link)))
+    (unless (file-remote-p fpath) ;; Do not connect to remote files
+      (if (file-exists-p fpath)
+          'org-link
+        'org-warning))))
 ;;;; Internal -- Make dir
 (defun org-glaux--assets-buffer-make-dir ()
   "Create asset directory of current buffer page if it doesn't exit."
@@ -656,7 +654,6 @@ exist."
         (make-directory assets-dir t))))
 
 ;;;; Internal -- Org properties
-;; https://emacs.stackexchange.com/questions/21713/how-to-get-property-values-from-org-file-headers
 (defun org-glaux--global-props (fpath &optional property)
   "Return the plists of global org properties of a FPATH.
 
@@ -752,27 +749,19 @@ Argument ORG-EXPORTER an org-exporter."
     plist-base))
 
 ;;;; Internal -- Selection
-(defun org-glaux--helm-selection (callback)
-  "Open a helm menu to select the wiki page and invokes the CALLBACK function."
-  (helm :sources
-	(helm-build-sync-source "Wiki Pages"
-	  :candidates  (cl-remove-if-not
-			(lambda (p) (when (car p) t))
-			(mapcar (lambda (file)
-				  ;; FIXME performance issue
-				  (cons (org-glaux--global-prop-value file "TITLE")
-					(org-glaux--file-wiki-path file)))
-				(org-glaux--page-files)))
-	  :fuzzy-match t
-	  :action callback)))
+(defun org-glaux--select (callback)
+  "Select a wiki page and invokes the CALLBACK function on it."
+  (let ((target (completing-read "Wiki pages: "
+				 (mapcar (lambda (file) (org-glaux--file-wiki-path file))
+					 (org-glaux--page-files)))))
+    (funcall callback target)))
 
-(defun org-glaux--assets-helm-selection (callback)
-  "Call a CALLBACK function on the filepath of the current page's selected asset."
-  (helm :sources
-	(helm-build-sync-source "Wiki Pages"
-	  :candidates (org-glaux--assets-page-files (org-glaux--assets-get-dir buffer-file-name))
-	  :fuzzy-match t
-	  :action (lambda (file) (funcall callback (org-glaux--current-page-assets-file file))))))
+(defun org-glaux--assets-select (callback)
+  "Select an asset of the current page and invokes the CALLBACK function on it."
+  (let ((target (completing-read "Wiki pages: "
+				 (org-glaux--assets-page-files
+				  (org-glaux--assets-get-dir buffer-file-name)))))
+    (funcall callback (org-glaux--current-page-assets-file target))))
 
 ;;;; Internal -- System application
 (defun org-glaux--xdg-open (filename)
