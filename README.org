@@ -1,6 +1,11 @@
 #+TITLE: Org-glaux 
 Glaux (/γλαῦξ/) is a personal wiki using the wiseness of org-mode.
 
+** Features
+- Support backward navigation (~org-glaux-navi-back~).
+- Support sub-directories.
+- Support dead wiki link highlighting.
+- and more...
 ** Installation
    
 Recommend configuration:
@@ -8,7 +13,7 @@ Recommend configuration:
 #+begin_src emacs-lisp
 (use-package org-glaux
     :pin manual
-    :load-path "packages/org-glaux/"
+    :load-path "lisp/org-glaux/"
     :bind ("C-c w" . org-glaux-index)
     :config 
     ;; Wikis location. default: '("~/org/wiki")
@@ -120,6 +125,9 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   - [X] change the repo name to something nice
   - [ ] support ivy
   - [ ] provide key-map + minor-mode? (to make local keybindings possible)
+  - [ ] Extend ~org-glaux--wiki-follow~ to something like ~:file~
+    link. Ref. ~org-link-open~ and [[https://orgmode.org/manual/External-Links.html][External-links]]. Support header searching.
+  - [ ] Bring a tag system.
 
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
