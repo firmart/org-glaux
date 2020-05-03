@@ -7,8 +7,10 @@ Glaux (/γλαῦξ/) is a personal wiki using the wiseness of org-mode.
 - Support dead wiki link highlighting.
 - and more...
 ** Installation
+  
+~git clone https://github.com/firmart/git-glaux ~/.emacs.d/lisp/git-glaux~
    
-Recommend configuration:
+Recommended configuration:
 
 #+begin_src emacs-lisp
 (use-package org-glaux

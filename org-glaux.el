@@ -105,13 +105,6 @@ You can toggle read-only mode with \\<read-only-mode>."
   :type 'file
   :group 'org-glaux)
 
-;; Path to init file like init.el used by function org-glaux-html-export
-;; The user can set for a more lightweight file in order to speed up the
-;; exporting speed.
-(defcustom org-glaux-user-init-file (concat gnus-home-directory ".emacs.el")
-  "Path to init.el file used for asynchronous export."
-  :type 'file
-  :group 'org-glaux)
 
 ;; Additional publishing options
 (defcustom org-glaux-publish-plist '()
@@ -244,16 +237,12 @@ execution."
   (browse-url (org-glaux--replace-extension buffer-file-name "html")))
 
 (defun org-glaux-export-html-sync ()
-  "Export all pages to html.
-Note: This function doesn't freeze Emacs since it starts another Emacs process."
   (interactive)
-  (compile (string-join
-	    `(,org-glaux-emacs-path
-	      "--batch"
-	      "-l" ,org-glaux-user-init-file
-	      "-f" "org-glaux-export--html"
-	      "--kill")
-	    " ")))
+  "Export all pages to html in synchronous mode."
+  (let ((org-html-htmlize-output-type "css")
+        (org-html-htmlize-font-prefix "org-"))
+    (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
+		 t)))
 
 ;;;; Index
 (defun org-glaux-index ()
@@ -529,14 +518,6 @@ the URL).
     (url-copy-file url output-file)
     (funcall callback output-file)))
 
-;;;; Internal -- Export
-(defun org-glaux--export-html ()
-  "Export all pages to html in synchronous mode."
-  (let ((org-html-htmlize-output-type "css")
-        (org-html-htmlize-font-prefix "org-"))
-    (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
-		 t)))
-
 ;;;; Internal -- Initialization
 (defun org-glaux--insert-header ()
   "Insert a header at the top of the file."
@@ -598,7 +579,7 @@ come back to it."
 Argument DESC wiki link description.
 Argument FORMAT format to export."
   (cl-case format
-    (html (format "<a href='%s'>%s</a>" wiki-path (or desc wiki-path)))
+    (html (format "<a href='%s'>%s</a>" (file-relative-name (org-glaux--page->html-file wiki-path) ".") (or desc wiki-path)))
     (ascii (format "%s (%s)" (or desc wiki-path) wiki-path))
     (latex (format "\\href{%s}{%s}"
 		   (file-relative-name
