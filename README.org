@@ -33,7 +33,7 @@ configuration can be found below.
 
 *** ~quelpa-use-package~
     
-- `M-x package-install RET quelpa-use-package RET`
+- ~M-x package-install RET quelpa-use-package RET~
     
 #+begin_src emacs-lisp
 (use-package org-glaux
