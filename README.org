@@ -7,10 +7,15 @@ Glaux (/[[https://en.wiktionary.org/wiki/%CE%B3%CE%BB%CE%B1%E1%BF%A6%CE%BE#Ancie
 - Support dead wiki link highlighting.
 - and more...
 ** Installation
-  
-~git clone https://github.com/firmart/git-glaux ~/.emacs.d/lisp/git-glaux~
    
-Recommended configuration:
+Before this package get into MELPA, there are two alternatives to install
+~org-glaux~ : manually or with ~quelpa-use-package~. The recommended
+configuration can be found below.
+
+*** Manual
+  
+- ~git clone https://github.com/firmart/git-glaux ~/.emacs.d/lisp/git-glaux~
+   
 
 #+begin_src emacs-lisp
 (use-package org-glaux
@@ -21,9 +26,26 @@ Recommended configuration:
     ;; Wikis location. default: '("~/org/wiki")
     (setq org-glaux-location-list '("~/Org/wiki" "~/Org/wiki2")) 
     ;; Destination to generate backup. default: nil
-    (setq org-glaux-backup-location "~/Org/wiki/index/"))
-    ;; Enable org-glaux menu
-    (org-glaux-menu-enable) ;; optional
+    (setq org-glaux-backup-location "~/Org/wiki/index/")
+    ;; Enable org-glaux menu. Optional.
+    (org-glaux-menu-enable))
+#+end_src
+
+*** ~quelpa-use-package~
+    
+- `M-x package-install RET quelpa-use-package RET`
+    
+#+begin_src emacs-lisp
+(use-package org-glaux
+  :ensure quelpa
+  :quelpa (org-glaux :repo "firmart/org-glaux" :fetcher github)
+  :config
+  ;; Wikis location. default: '("~/org/wiki")
+  (setq org-glaux-location-list '("~/Org/wiki" "~/Org/wiki2")) 
+  ;; Destination to generate backup. default: nil
+  (setq org-glaux-backup-location "~/Org/wiki/index/")
+  ;; Enable org-glaux menu. Optional.
+  (org-glaux-menu-enable)) 
 #+end_src
 
 ** Link formats
@@ -46,7 +68,6 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   | ~wiki:../~                | Parent page                                             |
   | ~wiki:../<pagename>~      | Sibling page                                            |
   |---------------------------+---------------------------------------------------------|
-
 
 ** TODO TODOs [32%]
    
@@ -139,4 +160,3 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
 
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
-
