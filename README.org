@@ -34,10 +34,11 @@ configuration can be found below.
 *** ~quelpa-use-package~
     
 - ~M-x package-install RET quelpa-use-package RET~
+- Make sure your have ~(require 'quelpa)~ and ~(require 'quelpa-use-package)~ 
+  somewhere in your configuration (or equivalently with ~use-package~).
     
 #+begin_src emacs-lisp
 (use-package org-glaux
-  :ensure quelpa
   :quelpa (org-glaux :repo "firmart/org-glaux" :fetcher github)
   :config
   ;; Wikis location. default: '("~/org/wiki")
