@@ -608,14 +608,24 @@ Argument FORMAT format to export."
    (directory-files-recursively org-glaux-location "\\.org$")))
 
 (defun org-glaux--wiki-face (wiki-path)
-  "Defines a dynamic face for wiki links.
-Inheriting from `org-link' but making the text red when the WIKI-PATH doesn't
-exist."
+  "Dynamic face for file links."
   (let ((fpath (org-glaux--page->file wiki-path)))
     (unless (file-remote-p fpath) ;; Do not connect to remote files
       (if (file-exists-p fpath)
           'org-link
+	;; file link broken
         'org-warning))))
+
+(defun org-glaux--url-face (url)
+  "Dynamic face for URL links."
+  (let ((https+url (if (string-match "https?://" url)
+		       url
+		     (concat "https://" url))))
+    (condition-case nil 
+	(when (url-file-exists-p https+url)
+	  'org-link)
+      ;; url broken or FIXME: connection error...
+      (error 'org-warning))))
 ;;;; Internal -- Make dir
 (defun org-glaux--assets-buffer-make-dir ()
   "Create asset directory of current buffer page if it doesn't exit."
@@ -627,7 +637,7 @@ exist."
   "Create the asset directory from a page's FILEPATH if it doesn't exist."
   (let ((assets-dir (org-glaux--assets-get-dir filepath)))
     (if (not (file-exists-p assets-dir))
-        (make-directory assets-dir t))))
+	(make-directory assets-dir t))))
 
 ;;;; Internal -- Menu
 (defun org-glaux--easy-menu-entry (entry-name prefix)
@@ -732,15 +742,15 @@ Argument FPATH: filepath."
   "Prepare plist for use with `org-publish'.
 Argument ORG-EXPORTER an org-exporter."
   (let ((plist-base
-         `("html"
-           :base-directory        ,org-glaux-location
-           :base-extension        "org"
-           :recursive             t
-           :publishing-directory  ,org-glaux-location
-           :publishing-function   ,org-exporter)))
+	 `("html"
+	   :base-directory        ,org-glaux-location
+	   :base-extension        "org"
+	   :recursive             t
+	   :publishing-directory  ,org-glaux-location
+	   :publishing-function   ,org-exporter)))
     (setcdr plist-base
 	    ;; combine with custom publish settings
-            (org-combine-plists (cdr plist-base) org-glaux-publish-plist))
+	    (org-combine-plists (cdr plist-base) org-glaux-publish-plist))
     plist-base))
 
 ;;;; Internal -- Selection
@@ -762,10 +772,17 @@ Argument ORG-EXPORTER an org-exporter."
 ;;;; Wiki link
 ;; Hyperlinks to other wiki pages.
 ;; wiki:<wiki-path> or [[wiki:<wiki-path>][<description>]]
-(if (fboundp 'org-link-set-parameters)
-    (org-link-set-parameters "wiki"
-			     :follow #'org-glaux--wiki-follow
-			     :export #'org-glaux--wiki-export
-			     :face #'org-glaux--wiki-face))
+(org-link-set-parameters "wiki"
+			 :follow #'org-glaux--wiki-follow
+			 :export #'org-glaux--wiki-export
+			 :face #'org-glaux--wiki-face)
+
+;;;; Http link
+;; (org-link-set-parameters "http"
+;;  			 :face #'org-glaux--url-face)
+;; 
+;; (org-link-set-parameters "https"
+;;  			 :face #'org-glaux--url-face)
 
 ;;; org-glaux.el ends here
+
