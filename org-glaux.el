@@ -1,4 +1,4 @@
-;; org-glaux.el --- Desktop wiki extension for org-mode -*- lexical-binding: t; -*-
+;;; org-glaux.el --- Desktop wiki extension for org-mode -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020 Firmin Martin
 
