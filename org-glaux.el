@@ -7,7 +7,7 @@
 ;; Version: 0.1
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
-;; Package-Requires: ((helm-core "2.0") (cl-lib "0.5") (emacs "25.1") (org "7.0"))
+;; Package-Requires: ((helm-core "2.0") (cl-lib "0.5") (emacs "25.1") (org "9.0"))
 
 
 ;; This program is free software: you can redistribute it and/or
@@ -51,7 +51,10 @@
   :type  '(repeat directory)
   :group 'org-glaux)
 
-(defvar org-glaux-location nil)
+(defvar org-glaux-location nil
+  "Current wiki directory.  If nil, set it to the CAR of `org-glaux-location-list' in runtime.")
+
+(defvar org-glaux--page-history nil "Stack of wiki pages visited.")
 
 (defcustom org-glaux-default-read-only nil
   "If this variable is non-nil all org-glaux pages will be read-only by default.
@@ -258,7 +261,7 @@ Note: This function doesn't freeze Emacs since it starts another Emacs process."
 The page is created if it doesn't exist."
   (interactive)
   (org-glaux--init-location)
-  (org-glaux--open-page org-glaux-index-file-basename))
+  (org-glaux--wiki-follow org-glaux-index-file-basename))
 
 (defun org-glaux-index-frame ()
   "Open the index page in a new frame."
@@ -364,12 +367,27 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-new-page ()
   "Create a new wiki page and open it without inserting a link."
   (interactive)
-  (org-glaux--open-page (read-string "Page Name: ")))
+  (org-glaux--wiki-follow (read-string "Page Name: ")))
 
 (defun org-glaux-website ()
   "Open org-glaux github repository."
   (interactive)
   (browse-url "http://www.github.com/firmart/org-glaux"))
+
+;;;; Navigation
+(defun org-glaux-navi-back ()
+  "Navigate back to the previous wiki page in the history.
+
+- Skip previous page which doesn't exist until found an existing one.
+- If there is no wiki page in the history, come back to the index page."
+  (interactive)
+  (let ((prev-page (pop org-glaux--page-history)))
+    (while (not (and prev-page (file-exists-p prev-page)))
+      (setq prev-page (pop org-glaux--page-history))
+      (unless prev-page
+	(org-glaux--init-location)
+	(setq prev-page (org-glaux--page->file org-glaux-index-file-basename))))
+    (find-file prev-page)))
 
 ;;;; Search
 (defun org-glaux-search-regex (pattern)
@@ -408,7 +426,7 @@ Note: This function is synchronous and blocks Emacs."
   (org-glaux--helm-selection  (lambda (act)
 				(with-selected-frame (make-frame)
 				  (set-frame-name (concat "Org-glaux: " act))
-				  (org-glaux--open-page act)))))
+				  (org-glaux--wiki-follow act)))))
 
 (defun org-glaux-select-html ()
   "Browse a wiki page in html format using helm.  It is created if it doesn't exist yet."
@@ -427,7 +445,7 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-select-page ()
   "Open a wiki page with helm."
   (interactive)
-  (org-glaux--helm-selection #'org-glaux--open-page))
+  (org-glaux--helm-selection #'org-glaux--wiki-follow))
 
 (defun org-glaux-select-root ()
   "Switch org-glaux root directory."
@@ -442,6 +460,7 @@ Note: This function is synchronous and blocks Emacs."
 		    (when org-glaux-close-root-switch
 		      (org-glaux-close-pages)
 		      (message (format "Org-glaux pages under directory %s are saved" org-glaux-location)))
+		    (setq org-glaux--page-history nil) ;; clean history of the previous wiki
 		    (setq org-glaux-location p)
 		    (org-glaux-index)
 		    (message (format "Org-glaux root directory set to: %s" p))))))
@@ -518,16 +537,6 @@ the URL).
     (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
 		 t)))
 
-(defun org-glaux--wiki-export (wiki-path desc format)
-  "Export a wiki page link from Org files."
-  (cl-case format
-    (html (format "<a href='%s'>%s</a>" wiki-path (or desc wiki-path)))
-    (ascii (format "%s (%s)" (or desc wiki-path) wiki-path))
-    (latex (format "\\href{%s}{%s}"
-		   (file-relative-name
-		    (expand-file-name wiki-path org-glaux-location) ".")
-		   (or desc wiki-path)))))
-
 ;;;; Internal -- Initialization
 (defun org-glaux--insert-header ()
   "Insert a header at the top of the file."
@@ -549,19 +558,52 @@ the URL).
       (goto-char (point-min))
       (insert text2))))
 
-;; TODO Rename this function
 (defun org-glaux--init-location ()
   "Initialize `org-glaux-location' variable if not set yet."
   (if (not org-glaux-location)
-      (setq org-glaux-location (car org-glaux-location-list))))
+      (let ((fst-loc (car org-glaux-location-list)))
+	(unless (or org-glaux-location-list (file-exists-p fst-loc))
+	  (error (format "`org-glaux-location-list' is nil or it contains non-existent directory '%s'" fst-loc)))
+	(setq org-glaux-location fst-loc))))
 
-;;;; Internal -- Link
+;;;; Internal -- Wiki Link
 (defun org-glaux--make-link (wiki-path)
   "Return a string containing a wiki link [[wiki:WIKI-PATH][TITLE]].
 Argument WIKI-PATH: the link which is a wiki-path."
   (format "[[wiki:%s][%s]]"
 	  wiki-path
 	  (org-glaux--global-prop-value (org-glaux--page->file wiki-path) "TITLE")))
+
+(defun org-glaux--wiki-follow (wiki-path)
+  "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
+
+It pushes current wiki buffer into history so that `org-glaux-navi-back' can
+come back to it."
+  (let ((page-fpath (org-glaux--page->file wiki-path)))
+    ;; push current file in page history stack
+    (when (org-glaux--is-buffer-in (current-buffer))
+      (push buffer-file-name org-glaux--page-history))
+    (if (file-exists-p page-fpath)
+	;; if the page exists, open it
+	(progn (find-file page-fpath)
+	       (when org-glaux-default-read-only (read-only-mode t)))
+      ;; if the page doesn't exist, create it
+      (find-file page-fpath)
+      (org-glaux--insert-header)
+      (save-buffer)
+      (org-glaux--assets-make-dir page-fpath))))
+
+(defun org-glaux--wiki-export (wiki-path desc format)
+  "Export a wiki page WIKI-PATH from Org files.
+Argument DESC wiki link description.
+Argument FORMAT format to export."
+  (cl-case format
+    (html (format "<a href='%s'>%s</a>" wiki-path (or desc wiki-path)))
+    (ascii (format "%s (%s)" (or desc wiki-path) wiki-path))
+    (latex (format "\\href{%s}{%s}"
+		   (file-relative-name
+		    (expand-file-name wiki-path org-glaux-location) ".")
+		   (or desc wiki-path)))))
 
 ;;;; Internal -- List
 (defun org-glaux--assets-page-files (dirpath)
@@ -610,6 +652,15 @@ Argument WIKI-PATH: the link which is a wiki-path."
 	  (string-suffix-p "#"  b))))
    (directory-files-recursively org-glaux-location "\\.org$")))
 
+;; https://github.com/caiorss/org-wiki/issues/25
+(defun org-glaux--wiki-face (wiki-path)
+  "Defines a dynamic face for wiki links.
+Inheriting from `org-link' but making the text red when the WIKI-PATH doesn't
+exist."
+  (let ((fpath (org-glaux--page->file wiki-path)))
+    (if (not (file-exists-p fpath))
+        '(:inherit org-link :foreground "red")
+      'org-link)))
 ;;;; Internal -- Make dir
 (defun org-glaux--assets-buffer-make-dir ()
   "Create asset directory of current buffer page if it doesn't exit."
@@ -622,19 +673,6 @@ Argument WIKI-PATH: the link which is a wiki-path."
   (let ((assets-dir (org-glaux--assets-get-dir filepath)))
     (if (not (file-exists-p assets-dir))
         (make-directory assets-dir t))))
-;;;; Internal -- Open
-(defun org-glaux--open-page (wiki-path)
-  "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH."
-  (let ((page-fpath (org-glaux--page->file wiki-path)))
-    (if (file-exists-p page-fpath)
-	;; if the page exists, open it
-	(progn (find-file page-fpath)
-	       (when org-glaux-default-read-only (read-only-mode t)))
-      ;; if the page doesn't exist, create it
-      (find-file page-fpath)
-      (org-glaux--insert-header)
-      (save-buffer)
-      (org-glaux--assets-make-dir page-fpath))))
 
 ;;;; Internal -- Org properties
 ;; https://emacs.stackexchange.com/questions/21713/how-to-get-property-values-from-org-file-headers
@@ -792,14 +830,12 @@ Argument ORG-EXPORTER an org-exporter."
 
 ;;; Links
 ;;;; Wiki link
-;; Hyperlinks to other org-glaux pages.
+;; Hyperlinks to other wiki pages.
 ;; wiki:<wiki-path> or [[wiki:<wiki-path>][<description>]]
 (if (fboundp 'org-link-set-parameters)
     (org-link-set-parameters "wiki"
-			     :follow #'org-glaux--open-page
-			     :export #'org-glaux--wiki-export)
-  (add-hook 'org-mode-hook
-	    ;; obsolete since org 9.0
-	    (lambda () (org-add-link-type "wiki" 'org-glaux--open-page 'org-glaux--wiki-export))))
+			     :follow #'org-glaux--wiki-follow
+			     :export #'org-glaux--wiki-export
+			     :face #'org-glaux--wiki-face))
 
 ;;; org-glaux.el ends here

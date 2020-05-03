@@ -1,5 +1,5 @@
 #+TITLE: Org-glaux 
-A personal wiki using the wiseness of org-mode.
+Glaux (/γλαῦξ/) is a personal wiki using the wiseness of org-mode.
 
 ** Link formats
 Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-like]].
@@ -77,9 +77,10 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
       - [ ] Use [[https://orgmode.org/manual/Include-Files.html][#+INCLUDE]] to include LaTeX ~\newcommand~
       - [ ] html export environment & ~\newcommand~
     - [ ] Update gifs
-  - [ ] Enhance navigation experience  [0/2]
-    - [ ] stack: push & pull
-    - [ ] Dead hyperlink (including website) highlight 
+  - [-] Enhance navigation experience  [2/3]
+    - [X] stack: push & pull
+    - [X] Dead wiki link highlight 
+    - [ ] Dead website link highlight 
   - [X] Lint [1/1]
     - [X] Fix "You should depend on (emacs "24.4")" errors
   - [ ] org-glaux's version of ~org-export-dispatch~.
