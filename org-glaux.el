@@ -291,8 +291,8 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (let ((page-name (read-string  "Page: ")))
     (save-excursion (insert (if (fboundp 'org-link-make-string)
-				(org-link-make-string (concat "wiki:" page-name))
-			      (org-make-link-string (concat "wiki:" page-name)) ;; obsolete since org 9.3
+				(org-link-make-string (concat "wiki:" page-name) page-name)
+			      (org-make-link-string (concat "wiki:" page-name) page-name) ;; obsolete since org 9.3
 			      page-name)))))
 
 (defun org-glaux-insert-select-link ()
@@ -608,7 +608,7 @@ Argument FORMAT format to export."
    (directory-files-recursively org-glaux-location "\\.org$")))
 
 (defun org-glaux--wiki-face (wiki-path)
-  "Dynamic face for file links."
+  "Dynamic face for WIKI-PATH link."
   (let ((fpath (org-glaux--page->file wiki-path)))
     (unless (file-remote-p fpath) ;; Do not connect to remote files
       (if (file-exists-p fpath)
@@ -621,7 +621,7 @@ Argument FORMAT format to export."
   (let ((https+url (if (string-match "https?://" url)
 		       url
 		     (concat "https://" url))))
-    (condition-case nil 
+    (condition-case nil
 	(when (url-file-exists-p https+url)
 	  'org-link)
       ;; url broken or FIXME: connection error...
@@ -644,7 +644,7 @@ Argument FORMAT format to export."
   "Create a menu entry with ENTRY-NAME including functions prefixed by PREFIX."
   ;; (entry-name [doc_f1 f1] [doc_f2 f2] ...)
   (cons entry-name
-	(mapcar 
+	(mapcar
 	 (lambda (f)
 	   ;; [<func-doc_first_line> <func>]
 	   (vector (car (split-string (documentation (intern f)) "\n"))
@@ -653,7 +653,7 @@ Argument FORMAT format to export."
 	 (let (glaux-list)
 	   (mapatoms (lambda (x)
 		       (when (and (fboundp x)
-				(string-prefix-p prefix (symbol-name x))) 
+				(string-prefix-p prefix (symbol-name x)))
 			 (push (symbol-name x) glaux-list ))))
 	   glaux-list))))
 
