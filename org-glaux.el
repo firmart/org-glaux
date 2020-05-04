@@ -336,7 +336,7 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-website ()
   "Open org-glaux github repository."
   (interactive)
-  (browse-url "http://www.github.com/firmart/org-glaux"))
+  (browse-url "https://firmart.github.io/org-glaux"))
 
 ;;;; Navigation
 (defun org-glaux-navi-back ()
