@@ -8,8 +8,8 @@
 
 ** TODO TODO features
    - Support VCS: git/svn/mercurial
-   - 
    - Support showing page description on point
+   - Support image gallery
 ** TODO TODO tasks [0%]
    
   - [-] Documentation [0/1]
