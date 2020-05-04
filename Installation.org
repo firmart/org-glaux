@@ -4,3 +4,45 @@
 #+KEYWORDS:
 #+STARTUP:  overview
 #+DATE: 2020-05-04
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
+
+Before this package get into MELPA, there are two alternatives to install
+~org-glaux~ : manually or with ~quelpa-use-package~. The recommended
+configuration can be found below.
+
+*** Manual
+  
+- ~git clone https://github.com/firmart/git-glaux ~/.emacs.d/lisp/git-glaux~
+   
+
+#+begin_src emacs-lisp
+(use-package org-glaux
+    :pin manual
+    :load-path "lisp/org-glaux/"
+    :bind ("C-c w" . org-glaux-index)
+    :config 
+    ;; Wikis location. default: '("~/org/wiki")
+    (setq org-glaux-location-list '("~/Org/wiki" "~/Org/wiki2")) 
+    ;; Destination to generate backup. default: nil
+    (setq org-glaux-backup-location "~/Org/wiki/index/")
+    ;; Enable org-glaux menu. Optional.
+    (org-glaux-menu-enable))
+#+end_src
+
+*** ~quelpa-use-package~
+    
+- ~M-x package-install RET quelpa-use-package RET~
+- Make sure your have ~(require 'quelpa)~ and ~(require 'quelpa-use-package)~ 
+  somewhere in your configuration (or equivalently with ~use-package~).
+    
+#+begin_src emacs-lisp
+(use-package org-glaux
+  :quelpa (org-glaux :repo "firmart/org-glaux" :fetcher github)
+  :config
+  ;; Wikis location. default: '("~/org/wiki")
+  (setq org-glaux-location-list '("~/Org/wiki" "~/Org/wiki2")) 
+  ;; Destination to generate backup. default: nil
+  (setq org-glaux-backup-location "~/Org/wiki/index/")
+  ;; Enable org-glaux menu. Optional.
+  (org-glaux-menu-enable)) 
+#+end_src
