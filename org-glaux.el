@@ -687,25 +687,28 @@ Argument FPATH: filepath."
   "Return the wiki-path of FPATH (filepath)."
   (file-relative-name (file-name-sans-extension fpath) org-glaux-location))
 
-(defun org-glaux--replace-extension (filename extension)
-  "Replace FILENAME's extension by a new EXTENSION."
-  (concat (car (split-string filename "\\.")) "." extension))
+(defun org-glaux--replace-extension (fpath extension)
+  "Replace FPATH's extension by a new EXTENSION."
+  (concat (file-name-directory fpath)
+	  (file-name-base fpath)
+	  "."
+	  extension))
 
-;; TODO rename this function
-(defun org-glaux--page->file (wiki-path)
-  "Return filepath of given WIKI-PATH.
+  ;; TODO rename this function
+  (defun org-glaux--page->file (wiki-path)
+    "Return filepath of given WIKI-PATH.
 - Relative wiki-path:
     - Children page: \"/test\" -> \"<current-file-assets-dir>/test.org\"
     - Sibling page: \"../test\" -> \"<current-dir>/test.org\"
 - Absolute wiki-path: \"test\" -> \"<org-glaux-location>/test.org\""
-  (expand-file-name
-   (concat
-    (concat
-     ;; if wiki-path starts with (../)+ or / then it's a relative wiki-path
-     (if (string-match "^\\(\\(\\.\\.\\/\\)+\\|\\/\\)" wiki-path)
-	 (file-name-as-directory (file-name-sans-extension buffer-file-name))
-       (file-name-as-directory org-glaux-location))
-     wiki-path) ".org")))
+    (expand-file-name
+     (concat
+      (concat
+       ;; if wiki-path starts with (../)+ or / then it's a relative wiki-path
+       (if (string-match "^\\(\\(\\.\\.\\/\\)+\\|\\/\\)" wiki-path)
+	   (file-name-as-directory (file-name-sans-extension buffer-file-name))
+	 (file-name-as-directory org-glaux-location))
+       wiki-path) ".org")))
 
 (defun org-glaux--current-page-name ()
   "Return current org-glaux page's name bound to current buffer."

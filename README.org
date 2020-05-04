@@ -117,8 +117,8 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
       - [X] org-glaux-menu		      
       - [X] org-glaux-help		      
   - [X] fix asset download
-  - [ ] Documentation [0/2]
-    - [ ] Activate github.io documentation page
+  - [-] Documentation [1/2]
+    - [X] Activate github.io documentation page
     - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
   - [ ] README.org [0/2]
     - [ ] Tips: LaTeX support [0/2]
