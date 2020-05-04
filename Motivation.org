@@ -1,0 +1,22 @@
+#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+TITLE: Motivation
+#+DESCRIPTION:
+#+KEYWORDS:
+#+STARTUP:  overview
+#+DATE: 2020-05-04
+
+
+Org-glaux is focused to bring a personal wiki experience. And it will be
+strongly inspired by Wikipedia existing tools to manage editing.
+
+* TODO Why ~org-glaux~
+* Similar project
+** TODO Emacs packages
+  
+- [[https://github.com/Kungsgeten/org-brain][org-brain]]: focus on concept mapping and personal wiki
+- [[https://github.com/l3kn/org-zettelkasten][org-zettelkasten]]:
+- [[https://github.com/caiorss/org-wiki][org-wiki]]:
+- [[https://github.com/jethrokuan/org-roam][org-roam]]:
+- [[https://github.com/EFLS/zetteldeft][zetteldeft]]:
+- [[https://github.com/alphapapa/org-graph-view][org-graph-view]]:
+- [[https://github.com/alphapapa/org-ql][org-ql]]:

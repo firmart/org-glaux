@@ -6,7 +6,10 @@
 #+DATE: 2020-05-04
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
 
+- [[wiki:Motivation][Motivation]]
 - [[wiki:Installation][Installation]]
+- [[wiki:Customization][Customization]]
 - [[wiki:select][Select page/buffer/root]]
 - [[wiki:navigation][Page navigation]]
 - [[wiki:TODOs][TODOs]]
+- [[wiki:Tips][Tips]]
