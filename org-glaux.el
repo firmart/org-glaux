@@ -4,7 +4,7 @@
 
 ;; Author: Firmin Martin
 ;; Maintainer: Firmin Martin
-;; Version: 0.1
+;; Version: 0.2
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
 ;; Package-Requires: ((cl-lib "0.5") (emacs "25.1") (org "9.0"))
