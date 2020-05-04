@@ -1,5 +1,5 @@
 #+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
-#+TITLE: index
+#+TITLE: Org-glaux
 #+DESCRIPTION:
 #+KEYWORDS:
 #+STARTUP:  overview
@@ -9,3 +9,4 @@
 - [[wiki:Installation][Installation]]
 - [[wiki:select][Select page/buffer/root]]
 - [[wiki:navigation][Page navigation]]
+- [[wiki:TODOs][TODOs]]
