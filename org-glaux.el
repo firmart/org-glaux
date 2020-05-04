@@ -145,7 +145,7 @@ You can toggle read-only mode with \\<read-only-mode>."
       "zip" "-r" "-9" zipfile ".")
      (lexical-let ((zipfile  zipfile)
                    (destfile destfile))
-       (lambda (process state)
+       (lambda (process)
          (when (equal (process-exit-status process) 0)
            (switch-to-buffer "*org-glaux-backup*")
            (rename-file zipfile org-glaux-backup-location t)
