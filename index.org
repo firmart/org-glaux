@@ -1,4 +1,4 @@
-#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+OPTIONS: d:nil toc:t ^:nil
 #+TITLE: Org-glaux
 #+DESCRIPTION:
 #+KEYWORDS:

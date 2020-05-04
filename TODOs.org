@@ -1,4 +1,4 @@
-#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+OPTIONS: 
 #+TITLE: TODOs
 #+DESCRIPTION:
 #+KEYWORDS:
@@ -10,7 +10,7 @@
    - Support VCS: git/svn/mercurial
    - Support showing page description on point
    - Support image gallery
-*** TODO TODO tasks [0%]
+** TODO TODO tasks [0%]
    
   - [-] Documentation [0/1]
     - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
