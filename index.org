@@ -1,0 +1,11 @@
+#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+TITLE: index
+#+DESCRIPTION:
+#+KEYWORDS:
+#+STARTUP:  overview
+#+DATE: 2020-05-04
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
+
+- [[wiki:Installation][Installation]]
+- [[wiki:select][Select page/buffer/root]]
+- [[wiki:navigation][Page navigation]]

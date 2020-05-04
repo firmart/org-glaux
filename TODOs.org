@@ -1,0 +1,97 @@
+#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+TITLE: TODOs
+#+DESCRIPTION:
+#+KEYWORDS:
+#+STARTUP:  overview
+#+DATE: 2020-05-04
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
+
+** TODO TODO tasks [32%]
+   
+  - [X] Naming convention of functions according to their functional categories [10/10]
+    - [X] ~org-glaux-close-[pages|images]~: anything related to close resources
+      - [X] org-glaux-close -> org-glaux-close-pages
+      - [X] org-glaux-close-images	      
+    - [X] ~org-glaux-export-<format>-[all]?-[sync|async]~: anything related to export
+      - [X] org-glaux-export-html	      
+      - [X] org-glaux-export-html-async   
+      - [X] org-glaux-export-html-sync    
+      - [X] org-glaux-export-with -> org-glaux-export-as : make it really interactive
+      - [X] merge org-glaux-html-page-export + org-glaux-html-page-open      
+    - [X] ~org-glaux-backup-*~: anything related to backup
+      - [X] org-glaux-backup-make -> org-glaux-backup
+    - [X] ~org-glaux-dired-*~: anything related to dired
+      - [X] org-glaux-assets-dired -> org-glaux-dired-assets      
+      - [X] org-glaux-find-dired	-> org-glaux-dired-files
+      - [X] org-glaux-backup-dired -> org-glaux-dired-backup
+    - [X] ~org-glaux-search-*~: anything related to searching
+      - [X] org-glaux-search -> org-glaux-search-regex	      
+    - [X] ~org-glaux-select-*~: anything related to select/open things
+      - [X] org-glaux-assets-helm -> org-glaux-select-assets-dired
+      - [X] org-glaux-helm -> org-glaux-select-page	      
+      - [X] org-glaux-helm-frame -> org-glaux-select-frame
+      - [X] org-glaux-helm-html -> org-glaux-select-html      
+      - [X] org-glaux-helm-switch -> org-glaux-select-buffer
+      - [X] org-glaux-switch-root -> org-glaux-select-root
+      - [X] org-glaux-assets-find-sys -> remove
+      - [X] org-glaux-assets-find-file -> org-glaux-select-asset  
+    - [X] ~org-glaux-server-*~: anything related to server
+      - [X] org-glaux-server-toggle 
+    - [X] ~org-glaux-index-*~: anything related to the index page
+      - [X] org-glaux-index 
+      - [X] org-glaux-index-frame	      
+      - [X] org-glaux-index-html
+    - [X] ~org-glaux-insert-*~: anything involving insert text
+      - [X] org-glaux-assets-download-insert-file -> org-glaux-insert-download
+      - [X] org-glaux-insert-link -> org-glaux-insert-select-link
+      - [X] org-glaux-insert-new ->  org-glaux-insert-new-link    
+      - [X] org-glaux-assets-insert-file -> org-glaux-insert-asset
+      - [X] org-glaux-assets-insert-image -> delete
+    - [X] Miscellaneous:
+      - [X] org-glaux-new -> org-glaux-new-page	      
+      - [X] org-glaux-website	      
+      - [X] org-glaux-menu		      
+      - [X] org-glaux-help		      
+  - [X] fix asset download
+  - [-] Documentation [1/2]
+    - [X] Activate github.io documentation page
+    - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
+  - [ ] README.org [0/2]
+    - [ ] Tips: LaTeX support [0/2]
+      - [ ] Use [[https://orgmode.org/manual/Include-Files.html][#+INCLUDE]] to include LaTeX ~\newcommand~
+      - [ ] html export environment & ~\newcommand~
+    - [ ] Update gifs
+  - [-] Enhance navigation experience  [2/3]
+    - [X] stack: push & pull
+    - [X] Dead wiki link highlight 
+    - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend
+      https if needed)
+  - [X] Lint [1/1]
+    - [X] Fix "You should depend on (emacs "24.4")" errors
+  - [ ] org-glaux's version of ~org-export-dispatch~.
+  - [ ] Fix new page overwriting header if parent directories doesn't exist.
+  - [ ] Add copy/renaming/moving page/assets facility
+  - [X] Handle edge cases: e.g. org-file's title = empty string
+  - [X] Fix the function which given a page returns its assets dir
+  - [ ] Consider ~org-attach~ before implementing download-related function.
+  - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
+  - [ ] In all interactive functions: check if current buffer is under an org-glaux dir
+  - [ ] Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
+  - [ ] Provide lint function listing all break link and suggesting quick fix Ref. [[https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks][correcting-and-maintaining-org-mode-hyperlinks]] 
+  - [X] Read-only function is necessary ? remove them.
+  - [ ] Generate html file by comparing created time with org file (speedup)
+  - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
+  - [X] Use ~completing-read~ whenever possible.
+  - [ ] Use https://gongzhitaao.org/orgcss/ as default css instead the default one.
+  - [ ] add custom group to exclude dirs and files for the backup.
+  - [ ] add link name in custom group as ~org-pdftools~ does.
+  - [ ] add this repo to MELPA
+    - [ ] meet CONTRIBUTING requirements
+  - [X] change the repo name to something nice
+  - [X] support ivy
+  - [ ] provide key-map + minor-mode? (to make local keybindings possible)
+  - [ ] Extend ~org-glaux--wiki-follow~ to something like ~:file~ link. Ref. ~org-link-open~ and [[https://orgmode.org/manual/External-Links.html][External-links]]. Support header searching.
+  - [ ] Bring a tag system.
+  - [ ] Use ~index~ as wiki settings file and ~index/~ as general assets directory
+  - [X] Update menu automatically.
+
