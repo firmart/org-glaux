@@ -1,4 +1,4 @@
-#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+#+OPTIONS: ^:nil
 #+TITLE: Selection
 #+DESCRIPTION:
 #+KEYWORDS:
