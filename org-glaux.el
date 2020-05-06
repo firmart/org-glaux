@@ -76,6 +76,7 @@ You can toggle read-only mode with \\<read-only-mode>."
 #+KEYWORDS:
 #+STARTUP:  overview
 #+DATE: %d
+#+BIBLIOGRAPHY: main plain
 ")
   "Default template used to create org-glaux pages/files.
 - %n - is replaced by the page name.
@@ -120,6 +121,7 @@ You can toggle read-only mode with \\<read-only-mode>."
 
 ;;; Interactive functions
 ;;;; Backup
+;;;###autoload
 (defun org-glaux-backup ()
   "Make a org-glaux backup."
   (interactive)
@@ -153,17 +155,19 @@ You can toggle read-only mode with \\<read-only-mode>."
            (insert  "\nBackup done.  Run M-x org-glaux-backup-dir to open backup directory.")))))))
 
 ;;;; Close
+;;;###autoload
 (defun org-glaux-close-images ()
   "Close all image/picture buffers which files are in org-glaux directory."
   (interactive)
   (mapc (lambda (b)
           (with-current-buffer b
             (when (and (org-glaux--is-buffer-in b)
-		       (equal major-mode 'image-mode))
+		     (equal major-mode 'image-mode))
               (kill-this-buffer))))
         (buffer-list))
   (message "All wiki images closed."))
 
+;;;###autoload
 (defun org-glaux-close-pages ()
   "Close all opened wiki pages buffer and save them."
   (interactive)
@@ -173,13 +177,14 @@ You can toggle read-only mode with \\<read-only-mode>."
               ;; save the buffer if it is bound to a file
               ;; and it is not read-only
               (when (and (buffer-file-name b)
-			 (not buffer-read-only))
+		       (not buffer-read-only))
                 (save-buffer))
               (kill-this-buffer))))
         (buffer-list))
   (message "All wiki files closed."))
 
 ;;;; Dired
+;;;###autoload
 (defun org-glaux-dired-assets ()
   "Open the asset directory of current wiki page."
   (interactive)
@@ -188,6 +193,7 @@ You can toggle read-only mode with \\<read-only-mode>."
     (org-glaux--assets-make-dir pagename)
     (dired (org-glaux--assets-get-dir buffer-file-name))))
 
+;;;###autoload
 (defun org-glaux-dired-backup ()
   "Open org-glaux backup directory in dired mode."
   (interactive)
@@ -199,12 +205,15 @@ You can toggle read-only mode with \\<read-only-mode>."
   ;; Update buffer
   (revert-buffer))
 
+;;;###autoload
 (defun org-glaux-dired-files ()
   "Show all wiki files in all sub-directories of `org-glaux-location'."
   (interactive)
   (find-dired org-glaux-location "-name '*.org'"))
 
 ;;;; Export
+
+;;;###autoload
 (defun org-glaux-export-as (org-exporter)
   "Export all pages to a given format.
 ORG-EXPORTER is a function that exports an `org-mode' page to a specific format
@@ -222,6 +231,7 @@ execution."
         (pub-plist (org-glaux--make-org-publish-plist org-exporter)))
     (org-publish pub-plist t)))
 
+;;;###autoload
 (defun org-glaux-export-html-async ()
   "Export all pages to html in asynchronous mode."
   (interactive)
@@ -229,12 +239,14 @@ execution."
 	(org-html-htmlize-font-prefix "org-"))
     (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html) t t)))
 
+;;;###autoload
 (defun org-glaux-export-html-page ()
   "Export the current wiki page to html and opens it in the browser."
   (interactive)
   (org-html-export-to-html)
   (browse-url (org-glaux--replace-extension buffer-file-name "html")))
 
+;;;###autoload
 (defun org-glaux-export-html-sync ()
   "Export all pages to html in synchronous mode."
   (interactive)
@@ -244,6 +256,8 @@ execution."
 		 t)))
 
 ;;;; Index
+
+;;;###autoload
 (defun org-glaux-index ()
   "Open the index page: <org-glaux-location>/index.org.
 
@@ -252,12 +266,14 @@ The page is created if it doesn't exist."
   (org-glaux--init-location)
   (org-glaux--wiki-follow org-glaux-index-file-basename))
 
+;;;###autoload
 (defun org-glaux-index-frame ()
   "Open the index page in a new frame."
   (interactive)
   (with-selected-frame (make-frame)
     (org-glaux-index)))
 
+;;;###autoload
 (defun org-glaux-index-html ()
   "Open the Wiki (Index) in the default web browser."
   (interactive)
@@ -266,6 +282,8 @@ The page is created if it doesn't exist."
 		       org-glaux-index-file-basename))))
 
 ;;;; Insert
+
+;;;###autoload
 (defun org-glaux-insert-asset ()
   "Insert at point a file link to a current page's asset file.
 The link type file is opened with Emacs."
@@ -277,6 +295,7 @@ The link type file is opened with Emacs."
 	       (org-make-link-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file))) ;; obsolete since org 9.3
 	       (file-name-nondirectory file))))))
 
+;;;###autoload
 (defun org-glaux-insert-download ()
   "Download a file from a URL in the clibpoard and insert a link file link.
 Note: This function is synchronous and blocks Emacs."
@@ -285,7 +304,7 @@ Note: This function is synchronous and blocks Emacs."
    (lambda (output-file)
      (save-excursion (insert (format "[[file:%s/%s][%s]]"
 				     (org-glaux--current-page-name) output-file output-file))))))
-
+;;;###autoload
 (defun org-glaux-insert-new-link ()
   "Create a new wiki page and insert a link to it at point."
   (interactive)
@@ -295,6 +314,7 @@ Note: This function is synchronous and blocks Emacs."
 			      (org-make-link-string (concat "wiki:" page-name) page-name) ;; obsolete since org 9.3
 			      page-name)))))
 
+;;;###autoload
 (defun org-glaux-insert-select-link ()
   "Insert a Wiki link at point for a existing page."
   (interactive)
@@ -303,11 +323,14 @@ Note: This function is synchronous and blocks Emacs."
      (insert (org-glaux--make-link wiki-path)))))
 
 ;;;; Miscellaneous
+
+;;;###autoload
 (defun org-glaux-help ()
   "Show org-glaux commands."
   (interactive)
   (command-apropos "org-glaux-"))
 
+;;;###autoload
 (defun org-glaux-menu-enable ()
   "Build a menu for org-glaux."
   (interactive)
@@ -328,17 +351,21 @@ Note: This function is synchronous and blocks Emacs."
 		(vector (documentation 'org-glaux-new-page) 'org-glaux-new-page)
 		(vector (documentation 'org-glaux-website) 'org-glaux-website)))))
 
+;;;###autoload
 (defun org-glaux-new-page ()
   "Create a new wiki page and open it without inserting a link."
   (interactive)
   (org-glaux--wiki-follow (read-string "Page Name: ")))
 
+;;;###autoload
 (defun org-glaux-website ()
   "Open org-glaux github repository."
   (interactive)
   (browse-url "https://firmart.github.io/org-glaux"))
 
 ;;;; Navigation
+
+;;;###autoload
 (defun org-glaux-navi-back ()
   "Navigate back to the previous wiki page in the history.
 
@@ -354,12 +381,16 @@ Note: This function is synchronous and blocks Emacs."
     (find-file prev-page)))
 
 ;;;; Search
+
+;;;###autoload
 (defun org-glaux-search-regex (pattern)
   "Search all wiki pages that contain a PATTERN (regexp or name)."
   (interactive "sorg-glaux - Search for: ")
   (grep-compute-defaults) ;; Set up grep-find-command
   (rgrep pattern "*.org" org-glaux-location))
 ;;;; Select
+
+;;;###autoload
 (defun org-glaux-select-asset ()
   "Open in Emacs a selected asset file of the current page from a menu."
   (interactive)
@@ -373,6 +404,7 @@ Note: This function is synchronous and blocks Emacs."
      (org-glaux--assets-make-dir page)
      (dired (org-glaux--assets-get-dir page)))))
 
+;;;###autoload
 (defun org-glaux-select-buffer ()
   "Switch between org-glaux page buffers."
   (interactive)
@@ -382,6 +414,7 @@ Note: This function is synchronous and blocks Emacs."
 	(action 'org-glaux--wiki-follow))
     (funcall action target)))
 
+;;;###autoload
 (defun org-glaux-select-frame ()
   "Select a wiki page and open it in a new frame."
   (interactive)
@@ -390,6 +423,7 @@ Note: This function is synchronous and blocks Emacs."
 			  (set-frame-name (concat "Org-glaux: " act))
 			  (org-glaux--wiki-follow act)))))
 
+;;;###autoload
 (defun org-glaux-select-html ()
   "Select a wiki page and open it in html.
 
@@ -405,11 +439,13 @@ The html page is created if it doesn't exist yet."
 	     (browse-url html-file)))))
     (funcall action target)))
 
+;;;###autoload
 (defun org-glaux-select-page ()
   "Select and open a wiki page."
   (interactive)
   (org-glaux--select #'org-glaux--wiki-follow))
 
+;;;###autoload
 (defun org-glaux-select-root ()
   "Switch org-glaux root directory."
   (interactive)
@@ -433,6 +469,7 @@ The html page is created if it doesn't exist yet."
 ;; Python3 simple http server, it can be refactored to work
 ;; with another more powerful http server such as Nginx.
 
+;;;###autoload
 (defun org-glaux-server-toggle ()
   "Start/stop org-glaux http server.  It requires Python3.
 Note: This command requires Python3 installed."
@@ -464,7 +501,6 @@ Note: This command requires Python3 installed."
 	      (kill-process (get-process pname))
 	      (message "Server stopped.")))))
 
-(provide 'org-glaux)
 ;;; Internal functions
 ;;;; Internal -- Download
 (defun org-glaux--assets-download-hof (callback)
@@ -787,5 +823,6 @@ Argument ORG-EXPORTER an org-exporter."
 ;; (org-link-set-parameters "https"
 ;;  			 :face #'org-glaux--url-face)
 
+(provide 'org-glaux)
 ;;; org-glaux.el ends here
 
