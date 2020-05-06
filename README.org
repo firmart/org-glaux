@@ -70,37 +70,9 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
   | ~wiki:../<pagename>~      | Sibling page                                            |
   |---------------------------+---------------------------------------------------------|
 
-** TODO TODOs [32%]
-   
-  - [-] Documentation [1/2]
-    - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
-  - [ ] README.org [0/2]
-    - [ ] Tips: LaTeX support [0/2]
-      - [ ] Use [[https://orgmode.org/manual/Include-Files.html][#+INCLUDE]] to include LaTeX ~\newcommand~
-      - [ ] html export environment & ~\newcommand~
-    - [ ] Update gifs
-  - [-] Enhance navigation experience  [2/3]
-    - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend
-      https if needed)
-  - [ ] org-glaux's version of ~org-export-dispatch~.
-  - [ ] Fix new page overwriting header if parent directories doesn't exist.
-  - [ ] Add copy/renaming/moving page/assets facility
-  - [ ] Consider ~org-attach~ before implementing download-related function.
-  - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
-  - [ ] In all interactive functions: check if current buffer is under an org-glaux dir
-  - [ ] Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
-  - [ ] Provide lint function listing all break link and suggesting quick fix Ref. [[https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks][correcting-and-maintaining-org-mode-hyperlinks]] 
-  - [ ] Generate html file by comparing created time with org file (speedup)
-  - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
-  - [ ] Use https://gongzhitaao.org/orgcss/ as default css instead the default one.
-  - [ ] add custom group to exclude dirs and files for the backup.
-  - [ ] add link name in custom group as ~org-pdftools~ does.
-  - [ ] add this repo to MELPA
-    - [ ] meet CONTRIBUTING requirements
-  - [ ] provide key-map + minor-mode? (to make local keybindings possible)
-  - [ ] Extend ~org-glaux--wiki-follow~ to something like ~:file~ link. Ref. ~org-link-open~ and [[https://orgmode.org/manual/External-Links.html][External-links]]. Support header searching.
-  - [ ] Bring a tag system.
-  - [ ] Use ~index~ as wiki settings file and ~index/~ as general assets directory
-
+** Wishilists
+ - Support edition history using VCS: git/svn/mercurial
+ - Support showing page description on point
+ - Support image gallery
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
