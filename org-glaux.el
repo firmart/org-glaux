@@ -377,7 +377,7 @@ Note: This function is synchronous and blocks Emacs."
       (setq prev-page (pop org-glaux--page-history))
       (unless prev-page
 	(org-glaux--init-location)
-	(setq prev-page (org-glaux--page->file org-glaux-index-file-basename))))
+	(setq prev-page (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename))))
     (find-file prev-page)))
 
 ;;;; Search
@@ -563,14 +563,14 @@ the URL).
 Argument WIKI-PATH: the link which is a wiki-path."
   (format "[[wiki:%s][%s]]"
 	  wiki-path
-	  (org-glaux--global-prop-value (org-glaux--page->file wiki-path) "TITLE")))
+	  (org-glaux--global-prop-value (org-glaux--cur-wiki-path-fpath wiki-path) "TITLE")))
 
 (defun org-glaux--wiki-follow (wiki-path)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
 
 It pushes current wiki buffer into history so that `org-glaux-navi-back' can
 come back to it."
-  (let ((page-fpath (org-glaux--page->file wiki-path)))
+  (let ((page-fpath (org-glaux--cur-wiki-path-fpath wiki-path)))
     ;; push current file in page history stack
     (when (org-glaux--is-buffer-in (current-buffer))
       (push buffer-file-name org-glaux--page-history))
@@ -645,7 +645,7 @@ Argument FORMAT format to export."
 
 (defun org-glaux--wiki-face (wiki-path)
   "Dynamic face for WIKI-PATH link."
-  (let ((fpath (org-glaux--page->file wiki-path)))
+  (let ((fpath (org-glaux--cur-wiki-path-fpath wiki-path)))
     (unless (file-remote-p fpath) ;; Do not connect to remote files
       (if (file-exists-p fpath)
           'org-link
@@ -730,21 +730,26 @@ Argument FPATH: filepath."
 	  "."
 	  extension))
 
-  ;; TODO rename this function
-  (defun org-glaux--page->file (wiki-path)
-    "Return filepath of given WIKI-PATH.
+(defun org-glaux--wiki-path-fpath (wiki-path buffer-fpath)
+  "Return filepath of given WIKI-PATH relative to BUFFER-FPATH.
+
+This function is designed for testing `org-glaux--cur-wiki-path-fpath'."
+  (expand-file-name
+   (concat
+    (concat
+     ;; if wiki-path starts with (../)+ or / then it's a relative wiki-path
+     (if (string-match "^\\(\\(\\.\\.\\/\\)+\\|\\/\\)" wiki-path)
+	 (file-name-as-directory (file-name-sans-extension buffer-fpath))
+       (file-name-as-directory org-glaux-location))
+     wiki-path) ".org")))
+
+(defun org-glaux--cur-wiki-path-fpath (wiki-path)
+  "Return filepath of given WIKI-PATH.
 - Relative wiki-path:
     - Children page: \"/test\" -> \"<current-file-assets-dir>/test.org\"
     - Sibling page: \"../test\" -> \"<current-dir>/test.org\"
 - Absolute wiki-path: \"test\" -> \"<org-glaux-location>/test.org\""
-    (expand-file-name
-     (concat
-      (concat
-       ;; if wiki-path starts with (../)+ or / then it's a relative wiki-path
-       (if (string-match "^\\(\\(\\.\\.\\/\\)+\\|\\/\\)" wiki-path)
-	   (file-name-as-directory (file-name-sans-extension buffer-file-name))
-	 (file-name-as-directory org-glaux-location))
-       wiki-path) ".org")))
+  (org-glaux--wiki-path-fpath wiki-path buffer-file-name))
 
 (defun org-glaux--current-page-name ()
   "Return current org-glaux page's name bound to current buffer."
@@ -763,7 +768,7 @@ Argument FPATH: filepath."
 
 (defun org-glaux--page->html-file (wiki-path)
   "Convert a page's WIKI-PATH to corresponding html filepath."
-  (org-glaux--replace-extension (org-glaux--page->file wiki-path) "html"))
+  (org-glaux--replace-extension (org-glaux--cur-wiki-path-fpath wiki-path) "html"))
 
 (defun org-glaux--assets-get-dir (filepath)
   "Return the page's asset directory path given its FILEPATH."
