@@ -7,7 +7,7 @@
 ;; Version: 0.2
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
-;; Package-Requires: ((cl-lib "0.5") (emacs "25.1") (org "9.0"))
+;; Package-Requires: ((cl-lib "0.5") (emacs "25.1") (org "9.3"))
 
 
 ;; This program is free software: you can redistribute it and/or
@@ -43,12 +43,14 @@
 
 (defgroup org-glaux nil
   "Org-glaux Settings"
-  :group 'tools)
+  :group 'tools
+  :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux-location-list '("~/org/wiki")
   "List of org-glaux root directories."
   :type  '(repeat directory)
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 (defvar org-glaux-location nil
   "Current wiki directory.  If nil, set it to the CAR of `org-glaux-location-list' in runtime.")
@@ -59,13 +61,15 @@
   "If this variable is non-nil all org-glaux pages will be read-only by default.
 You can toggle read-only mode with \\<read-only-mode>."
   :type  'boolean
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux-close-root-switch t
   "If set, all org-glaux pages are closed when root directory is switched.
 \(Default value: true)"
   :type  'boolean
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux-template
   (string-trim
@@ -83,41 +87,66 @@ You can toggle read-only mode with \\<read-only-mode>."
 - %d - is replaced by current date in the format year-month-day."
 
   :type 'string
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 ;; Default index page (index.org) accessed with M-x org-glaux-index
 (defvar org-glaux-index-file-basename "index")
+;;;; Version control settings
+;; TODO add other vcs 
+(defcustom org-glaux-vc-backend "git"
+  "Activate edit history using version control software."
+  :type '(radio (const :tag "git" :value "git")
+		(const :tag "no version control" :value nil))
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
 
+(defcustom org-glaux-vc-ignored-exts nil
+  "List of file's extensions to exclude from version control."
+  :type 'list
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
+
+(defcustom org-glaux-vc-wiki-pages-only nil
+  "If non-nil, the version-control applies only on wiki pages (.org files)."
+  :type 'boolean
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
 ;;;; Python webserver settings
 (defcustom org-glaux-server-port "8000"
   "Default port to server org-glaux static files server."
   :type  'string
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux-server-host "0.0.0.0"
   "Default address that the server listens to."
   :type  'string
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 ;;;; Async export settings
 (defcustom org-glaux-emacs-path "emacs"
   "Path to Emacs executable.  Default value 'Emacs'."
   :type 'file
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 
 ;; Additional publishing options
 (defcustom org-glaux-publish-plist '()
   "Additional options passed to `org-publish'."
   :type 'plist
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 
 ;;;; Backup settings
 (defcustom org-glaux-backup-location nil
   "Path to backup directory."
   :type 'directory
-  :group 'org-glaux)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
 
 ;;; Interactive functions
 ;;;; Backup
@@ -188,10 +217,10 @@ You can toggle read-only mode with \\<read-only-mode>."
 (defun org-glaux-dired-assets ()
   "Open the asset directory of current wiki page."
   (interactive)
-  (let ((pagename (org-glaux--current-page-name)))
+  (let ((pagename (file-name-base buffer-file-name)))
     ;; TODO check if it is a wiki-page
     (org-glaux--assets-make-dir pagename)
-    (dired (org-glaux--assets-get-dir buffer-file-name))))
+    (dired (file-name-sans-extension buffer-file-name))))
 
 ;;;###autoload
 (defun org-glaux-dired-backup ()
@@ -290,10 +319,14 @@ The link type file is opened with Emacs."
   (interactive)
   (org-glaux--assets-select
    (lambda (file)
-     (insert (if (fboundp 'org-link-make-string)
-		 (org-link-make-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file)))
-	       (org-make-link-string (format "file:%s/%s" (org-glaux--current-page-name) (file-name-nondirectory file)) (read-string "Description: " (file-name-nondirectory file))) ;; obsolete since org 9.3
-	       (file-name-nondirectory file))))))
+     (insert 
+      (org-link-make-string
+       (format "file:%s/%s"
+	       (file-name-base buffer-file-name)
+	       (file-name-nondirectory file))
+       (read-string "Description: "
+		    (file-name-nondirectory file)))
+      (file-name-nondirectory file)))))
 
 ;;;###autoload
 (defun org-glaux-insert-download ()
@@ -303,16 +336,13 @@ Note: This function is synchronous and blocks Emacs."
   (org-glaux--assets-download-hof
    (lambda (output-file)
      (save-excursion (insert (format "[[file:%s/%s][%s]]"
-				     (org-glaux--current-page-name) output-file output-file))))))
+				     (file-name-base buffer-file-name) output-file output-file))))))
 ;;;###autoload
 (defun org-glaux-insert-new-link ()
   "Create a new wiki page and insert a link to it at point."
   (interactive)
-  (let ((page-name (read-string  "Page: ")))
-    (save-excursion (insert (if (fboundp 'org-link-make-string)
-				(org-link-make-string (concat "wiki:" page-name) page-name)
-			      (org-make-link-string (concat "wiki:" page-name) page-name) ;; obsolete since org 9.3
-			      page-name)))))
+  (let ((page-name (read-string  "Page wiki-link: ")))
+    (save-excursion (insert (org-link-make-string (concat "wiki:" page-name) page-name)))))
 
 ;;;###autoload
 (defun org-glaux-insert-select-link ()
@@ -402,7 +432,7 @@ Note: This function is synchronous and blocks Emacs."
   (org-glaux--select
    (lambda (page)
      (org-glaux--assets-make-dir page)
-     (dired (org-glaux--assets-get-dir page)))))
+     (dired (file-name-sans-extension page)))))
 
 ;;;###autoload
 (defun org-glaux-select-buffer ()
@@ -519,7 +549,7 @@ the URL).
 	       (buffer-substring-no-properties (point-min)
 					       (point-max))))
        (url (read-string "Url: " text))
-       (default-directory (org-glaux--assets-get-dir buffer-file-name))
+       (default-directory (file-name-sans-extension buffer-file-name))
 
        (output-file  (read-string "File name: "
 				  (car  (last (split-string url "/"))))))
@@ -538,7 +568,7 @@ the URL).
 	;; replace '%n' by page title
 	((text1 (replace-regexp-in-string
 		 "%n"
-		 (org-glaux--current-page-name)
+		 (file-name-base buffer-file-name)
 		 org-glaux-template))
 	 ;; Replace %d by current date in the format %Y-%m-%d
 	 (text2 (replace-regexp-in-string
@@ -667,11 +697,11 @@ Argument FORMAT format to export."
   "Create asset directory of current buffer page if it doesn't exit."
   (if (not (org-glaux--is-buffer-in (current-buffer)))
       (error "Not in a wiki page")
-    (org-glaux--assets-make-dir (org-glaux--current-page-name))))
+    (org-glaux--assets-make-dir (file-name-base buffer-file-name))))
 
 (defun org-glaux--assets-make-dir (filepath)
   "Create the asset directory from a page's FILEPATH if it doesn't exist."
-  (let ((assets-dir (org-glaux--assets-get-dir filepath)))
+  (let ((assets-dir (file-name-sans-extension filepath)))
     (if (not (file-exists-p assets-dir))
 	(make-directory assets-dir t))))
 
@@ -744,36 +774,26 @@ This function is designed for testing `org-glaux--cur-wiki-path-fpath'."
      wiki-path) ".org")))
 
 (defun org-glaux--cur-wiki-path-fpath (wiki-path)
-  "Return filepath of given WIKI-PATH.
+  "Return filepath of given WIKI-PATH of current buffer.
 - Relative wiki-path:
     - Children page: \"/test\" -> \"<current-file-assets-dir>/test.org\"
     - Sibling page: \"../test\" -> \"<current-dir>/test.org\"
 - Absolute wiki-path: \"test\" -> \"<org-glaux-location>/test.org\""
   (org-glaux--wiki-path-fpath wiki-path buffer-file-name))
 
-(defun org-glaux--current-page-name ()
-  "Return current org-glaux page's name bound to current buffer."
-  (file-name-base buffer-file-name))
-
-;; TODO rename this function
-(defun org-glaux--current-page-assets-dir ()
+(defun org-glaux--cur-page-assets-dir ()
   "Return current org-glaux page's asset directory path."
-  (expand-file-name (org-glaux--current-page-name)
+  (expand-file-name (file-name-base buffer-file-name)
 		    (file-name-directory buffer-file-name)))
 
 ;; TODO rename this function
-(defun org-glaux--current-page-assets-file (filename)
+(defun org-glaux--cur-page-assets-file (filename)
   "Return current page's asset path given its FILENAME."
-  (expand-file-name filename (org-glaux--current-page-assets-dir)))
+  (expand-file-name filename (org-glaux--cur-page-assets-dir)))
 
 (defun org-glaux--page->html-file (wiki-path)
   "Convert a page's WIKI-PATH to corresponding html filepath."
   (org-glaux--replace-extension (org-glaux--cur-wiki-path-fpath wiki-path) "html"))
-
-(defun org-glaux--assets-get-dir (filepath)
-  "Return the page's asset directory path given its FILEPATH."
-  (file-name-sans-extension filepath))
-
 ;;;; Internal -- Predicate
 (defun org-glaux--is-buffer-in (buffer)
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location`."
@@ -809,8 +829,23 @@ Argument ORG-EXPORTER an org-exporter."
   "Select an asset of the current page and invokes the CALLBACK function on it."
   (let ((target (completing-read "Wiki pages: "
 				 (org-glaux--assets-page-files
-				  (org-glaux--assets-get-dir buffer-file-name)))))
-    (funcall callback (org-glaux--current-page-assets-file target))))
+				  (file-name-sans-extension buffer-file-name)))))
+    (funcall callback (org-glaux--cur-page-assets-file target))))
+
+;;;; Internal -- Version control
+(defun org-glaux--vc-git-find-root (fpath)
+  "Find the root of a project under VC from a FPATH.
+
+  The function walks up the directory tree from FPATH looking for \".git\".
+  If \".git\" is not found, return nil, otherwise return the root."
+  (vc-find-root fpath ".git"))
+
+(defun org-glaux--vc-git-init-root ()
+  "Init the current wiki root as a git repository if it's the case."
+  (unless (org-glaux--vc-git-find-root org-glaux-location)
+    (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
+      (with-current-buffer (find-file-noselect index)
+	(vc-git-create-repo)))))
 
 ;;; Links
 ;;;; Wiki link
@@ -830,4 +865,3 @@ Argument ORG-EXPORTER an org-exporter."
 
 (provide 'org-glaux)
 ;;; org-glaux.el ends here
-
