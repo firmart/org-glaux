@@ -93,23 +93,29 @@ You can toggle read-only mode with \\<read-only-mode>."
 ;; Default index page (index.org) accessed with M-x org-glaux-index
 (defvar org-glaux-index-file-basename "index")
 ;;;; Version control settings
-;; TODO add other vcs 
-(defcustom org-glaux-vc-backend "git"
+;; TODO add other vcs
+(defcustom org-glaux-vc-backend 'git
   "Activate edit history using version control software."
-  :type '(radio (const :tag "git" :value "git")
+  :type '(radio (const :tag "git" :value 'git)
 		(const :tag "no version control" :value nil))
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
-(defcustom org-glaux-vc-ignored-exts nil
-  "List of file's extensions to exclude from version control."
-  :type 'list
+(defcustom org-glaux-vc-ignored-wilcard nil
+  "List of wildcard to exclude file from version control."
+  :type '(repeat string)
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
 (defcustom org-glaux-vc-wiki-pages-only nil
   "If non-nil, the version-control applies only on wiki pages (.org files)."
   :type 'boolean
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
+
+(defcustom org-glaux-vc-commit-when 'close
+  "Indicate when files are registered in version-control and committed."
+  :type '(radio (const :tag "close" :value 'close))
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 ;;;; Python webserver settings
@@ -147,6 +153,13 @@ You can toggle read-only mode with \\<read-only-mode>."
   :type 'directory
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
+
+;;;; Hooks
+;; (defcustom org-glaux-pre-close-hook nil
+;;   "List of hook functions run by `org-glaux-close-root-switch', `org-glaux-close-pages' and `org-glaux-close-images'. (see `run-hooks')."
+;;   :type 'hook
+;;   :group 'org-glaux
+;;   :package-version '(org-glaux . "0.2"))
 
 ;;; Interactive functions
 ;;;; Backup
@@ -200,17 +213,14 @@ You can toggle read-only mode with \\<read-only-mode>."
 (defun org-glaux-close-pages ()
   "Close all opened wiki pages buffer and save them."
   (interactive)
+  ;; register all opened files to version control
   (mapc (lambda (b)
-          (with-current-buffer b
-            (when (org-glaux--is-buffer-in b)
-              ;; save the buffer if it is bound to a file
-              ;; and it is not read-only
-              (when (and (buffer-file-name b)
-		       (not buffer-read-only))
-                (save-buffer))
-              (kill-this-buffer))))
-        (buffer-list))
-  (message "All wiki files closed."))
+	  (with-current-buffer b
+	    (when (org-glaux--is-buffer-in b)
+	      (save-buffer)
+	      (kill-this-buffer))))
+	(buffer-list)
+	(message "All wiki files closed.")))
 
 ;;;; Dired
 ;;;###autoload
@@ -319,7 +329,7 @@ The link type file is opened with Emacs."
   (interactive)
   (org-glaux--assets-select
    (lambda (file)
-     (insert 
+     (insert
       (org-link-make-string
        (format "file:%s/%s"
 	       (file-name-base buffer-file-name)
@@ -795,11 +805,13 @@ This function is designed for testing `org-glaux--cur-wiki-path-fpath'."
   "Convert a page's WIKI-PATH to corresponding html filepath."
   (org-glaux--replace-extension (org-glaux--cur-wiki-path-fpath wiki-path) "html"))
 ;;;; Internal -- Predicate
+(defun org-glaux--is-file-in (fpath)
+  "Return non-nil if FPATH is an org-glaux file under `org-glaux-location'."
+  (string-prefix-p (expand-file-name org-glaux-location) fpath))
+
 (defun org-glaux--is-buffer-in (buffer)
-  "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location`."
-  (string-prefix-p
-   (expand-file-name org-glaux-location)
-   (buffer-file-name buffer)))
+  "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
+  (org-glaux--is-file-in (buffer-file-name buffer)))
 
 ;;;; Internal -- Publish
 (defun org-glaux--make-org-publish-plist (org-exporter)
@@ -841,11 +853,36 @@ Argument ORG-EXPORTER an org-exporter."
   (vc-find-root fpath ".git"))
 
 (defun org-glaux--vc-git-init-root ()
-  "Init the current wiki root as a git repository if it's the case."
+  "Init the current wiki root as a git repository if it's not the case."
   (unless (org-glaux--vc-git-find-root org-glaux-location)
     (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
       (with-current-buffer (find-file-noselect index)
 	(vc-git-create-repo)))))
+
+(defun org-glaux--vc-git-filter-files (files)
+  (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in files)))
+    (if org-glaux-vc-wiki-pages-only
+	;; keep only wiki pages
+	(cl-remove-if-not
+	 (lambda (fpath) (string-suffix-p ".org" fpath))
+	 wiki-files)
+      ;; remove ignored files
+      (cl-remove-if ;; FIXME short-circuit evaluation
+       (lambda (fpath) (let ((remove? nil))
+		    (dolist (regex org-glaux-vc-ignored-regex remove?)
+		      (setq remove?
+			    (or remove?
+			       (string-match-p
+				;; glob to regex
+				(replace-regexp-in-string "\\*" ".*"
+							  (replace-regexp-in-string "\\." "\\\\."
+										    (format "^%s$" regex)))
+				fpath)))
+		      (message (format "%s" remove?)))))
+       wiki-files))))
+
+(defun org-glaux--vc-git-register-files (files)
+  (vc-git-register (org-glaux--vc-git-filter-files files)))
 
 ;;; Links
 ;;;; Wiki link

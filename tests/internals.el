@@ -50,9 +50,33 @@
 (ert-deftest org-glaux-test-page->html-file ())
 (ert-deftest org-glaux-test-assets-get-dir ())
 ;;;; Internal -- Predicate
+(ert-deftest org-glaux-test-is-file-in ())
 (ert-deftest org-glaux-test-is-buffer-in ())
 ;;;; Internal -- Publish
 (ert-deftest org-glaux-test-make-org-publish-plist ())
 ;;;; Internal -- Selection
 (ert-deftest org-glaux-test-select ())
 (ert-deftest org-glaux-test-assets-select ())
+;;;; Internal -- Version control
+(ert-deftest org-glaux-test-vc-git-find-root ())
+(ert-deftest org-glaux-test-vc-git-init-root ())
+(ert-deftest org-glaux-test-vc-git-filter-files ()
+  (let ((files '("/path/to/test.org"
+		 "/path/to/test2.org"
+		 "/path/to/test.tar.gz"
+		 "/path/to/test.c"
+		 "/path/to/test.h"
+	         "/external/path/to/test.org"))
+	(org-glaux-vc-ignored-wildcard '("*.[ch]"))
+	(org-glaux-location "/path/to"))
+    ;; `org-glaux-vc-wiki-pages-only' overwrites `org-glaux-vc-ignored-regex'
+    (should (equal
+	     (let ((org-glaux-vc-wiki-pages-only t))
+	       (org-glaux--vc-git-filter-files files))
+	     '("/path/to/test.org" "/path/to/test2.org")))
+    ;; remove *.[ch]
+    (should (equal
+	     (let ((org-glaux-vc-wiki-pages-only nil))
+	       (org-glaux--vc-git-filter-files files))
+	     '("/path/to/test.org" "/path/to/test2.org" "/path/to/test.tar.gz")))))
+(ert-deftest org-glaux--vc-git-register-files ())
