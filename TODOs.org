@@ -6,20 +6,19 @@
 #+DATE: 2020-05-04
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
 
-** TODO TODO features
-   - Support VCS: git/svn/mercurial
+** TODO Wishlists
    - Support showing page description on point
    - Support image gallery
-** TODO TODO tasks [0%]
+** TODO TODO tasks [4%]
    
-  - [-] Documentation [0/1]
+  - [ ] Documentation [0/1]
     - [ ] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
   - [ ] README.org [0/2]
     - [ ] Tips: LaTeX support [0/2]
       - [ ] Use [[https://orgmode.org/manual/Include-Files.html][#+INCLUDE]] to include LaTeX ~\newcommand~
       - [ ] html export environment & ~\newcommand~
     - [ ] Update gifs
-  - [-] Enhance navigation experience  [0/1]
+  - [ ] Enhance navigation experience  [0/1]
     - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend
       https if needed)
   - [ ] org-glaux's version of ~org-export-dispatch~.
@@ -41,4 +40,6 @@
   - [ ] Extend ~org-glaux--wiki-follow~ to something like ~:file~ link. Ref. ~org-link-open~ and [[https://orgmode.org/manual/External-Links.html][External-links]]. Support header searching.
   - [ ] Bring a tag system.
   - [ ] Use ~index~ as wiki settings file and ~index/~ as general assets directory
+  - [X] Add test suites
+  - [ ] Add Travis 
 
