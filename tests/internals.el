@@ -60,7 +60,7 @@
 ;;;; Internal -- Version control
 (ert-deftest org-glaux-test-vc-git-find-root ())
 (ert-deftest org-glaux-test-vc-git-init-root ())
-(ert-deftest org-glaux-test-vc-git-filter-files ()
+(ert-deftest org-glaux-test-vc-filter-files ()
   (let ((files '("/path/to/test.org"
 		 "/path/to/test2.org"
 		 "/path/to/test.tar.gz"

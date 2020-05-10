@@ -36,6 +36,8 @@
 (require 'cl-lib)     ;; Common-lisp emulation library
 (require 'easymenu)
 (require 'subr-x)     ;; Provides string trim functions.
+(require 'vc)
+(require 'vc-git)
 
 ;;; Code:
 ;;; Custom group
@@ -101,21 +103,47 @@ You can toggle read-only mode with \\<read-only-mode>."
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
-(defcustom org-glaux-vc-ignored-wilcard nil
-  "List of wildcard to exclude file from version control."
+(defcustom org-glaux-vc-ignore-files-exceed-size (* 150 1024 1024)
+  "Do not register file having size exceeding an amount of bytes."
+  :type 'integer
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
+
+(defcustom org-glaux-vc-ignored-dirs-glob
+  (append '("*ltximg*" "*_minted*")
+	  (mapcar (lambda (d) (format "*%s*" d)) vc-directory-exclusion-list))
+  "List of glob patterns to exclude directories from version control.
+
+These ignored-patterns apply on every wiki and have effect only if
+`org-glaux-vc-wiki-pages-only' is nil.  To specify a per-wiki or
+per-directory files pattern to ignore, include them in a local `.gitignore'
+instead."
+  :type '(repeat string)
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
+
+(defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#")
+  "List of glob patterns to exclude file-path from version control.
+
+These ignored-patterns apply on every wiki and have effect only if
+`org-glaux-vc-wiki-pages-only' is nil.  To specify a per-wiki or
+per-directory files pattern to ignore, include them in a local `.gitignore'
+instead."
   :type '(repeat string)
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
 (defcustom org-glaux-vc-wiki-pages-only nil
-  "If non-nil, the version-control applies only on wiki pages (.org files)."
+  "If non-nil, the version control applies only on wiki pages (.org files)."
   :type 'boolean
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
 (defcustom org-glaux-vc-commit-when 'close
-  "Indicate when files are registered in version-control and committed."
-  :type '(radio (const :tag "close" :value 'close))
+  "Indicate when files are registered in version control and committed."
+  :type '(radio (const :tag "commit opened wiki buffers when `org-glaux-close-pages' is called" :value 'close)
+		(const :tag "commit when follow a wiki page" :value 'follow)
+		(const :tag "always commit manually" :value 'manual))
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 ;;;; Python webserver settings
@@ -193,34 +221,25 @@ You can toggle read-only mode with \\<read-only-mode>."
          (when (equal (process-exit-status process) 0)
            (switch-to-buffer "*org-glaux-backup*")
            (rename-file zipfile org-glaux-backup-location t)
-           (message "Backup done.")
+           (message "org-glaux: backup done")
            (insert  "\nBackup done.  Run M-x org-glaux-backup-dir to open backup directory.")))))))
 
 ;;;; Close
 ;;;###autoload
-(defun org-glaux-close-images ()
-  "Close all image/picture buffers which files are in org-glaux directory."
-  (interactive)
-  (mapc (lambda (b)
-          (with-current-buffer b
-            (when (and (org-glaux--is-buffer-in b)
-		     (equal major-mode 'image-mode))
-              (kill-this-buffer))))
-        (buffer-list))
-  (message "All wiki images closed."))
-
-;;;###autoload
 (defun org-glaux-close-pages ()
-  "Close all opened wiki pages buffer and save them."
+  "Close all opened wiki page buffers and save them."
   (interactive)
   ;; register all opened files to version control
-  (mapc (lambda (b)
-	  (with-current-buffer b
-	    (when (org-glaux--is-buffer-in b)
-	      (save-buffer)
-	      (kill-this-buffer))))
-	(buffer-list)
-	(message "All wiki files closed.")))
+  (let ((wiki-buffers
+	 (cl-remove-if-not 'org-glaux--is-buffer-in (buffer-list))))
+    (mapc (lambda (b) (with-current-buffer b (save-buffer))) wiki-buffers)
+    ;; register and commit
+    (org-glaux--vc-git-commit-files 
+     (mapcar 'buffer-file-name wiki-buffers)
+     'close
+     "org-glaux: automatic commit on close")
+    (mapc (lambda (b) (with-current-buffer b (kill-this-buffer))) wiki-buffers)
+    (message "org-glaux: all wiki files closed")))
 
 ;;;; Dired
 ;;;###autoload
@@ -321,7 +340,6 @@ The page is created if it doesn't exist."
 		       org-glaux-index-file-basename))))
 
 ;;;; Insert
-
 ;;;###autoload
 (defun org-glaux-insert-asset ()
   "Insert at point a file link to a current page's asset file.
@@ -450,7 +468,7 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (let ((target (completing-read "Wiki pages:"
 				 (mapcar (lambda (b) (org-glaux--file-wiki-path (buffer-file-name b)))
-					 (org-glaux--get-buffers))))
+					 (org-glaux--get-buffers-filename))))
 	(action 'org-glaux--wiki-follow))
     (funcall action target)))
 
@@ -493,7 +511,7 @@ The html page is created if it doesn't exist yet."
 	(action
 	 (lambda (p)
 	   ;; If the selected wiki is the same, no need to erase navigation history
-	   (unless (eq p org-glaux-location)
+	   (unless (string= p org-glaux-location)
 	     ;; Close all current org-glaux pages if custom value set
 	     (when org-glaux-close-root-switch
 	       (org-glaux-close-pages)
@@ -526,7 +544,7 @@ Note: This command requires Python3 installed."
           (switch-to-buffer bname)
           (save-excursion ;; Save cursor position
 	    (insert "Server started ...\n\n")
-	    (message "\nServer started ...\n"))
+	    (message "org-glaux: server started ..."))
           (start-process pname
                          bname
                          "python3"
@@ -539,7 +557,30 @@ Note: This command requires Python3 installed."
             (browse-url (format "http://localhost:%s" org-glaux-server-port))))
       (progn  (switch-to-buffer bname)
 	      (kill-process (get-process pname))
-	      (message "Server stopped.")))))
+	      (message "org-glaux: server stopped")))))
+
+;;;; Version control
+
+;;;###autoload
+(defun org-glaux-vc-git-init-root ()
+  "Init the current wiki root as a git repository if it's not the case."
+  (interactive)
+  (org-glaux--vc-git-install-check)
+  (unless (org-glaux--vc-git-find-root org-glaux-location)
+    (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
+      (with-current-buffer (find-file-noselect index)
+	(vc-git-create-repo)))))
+
+;;;###autoload
+(defun org-glaux-vc-git-full-commit ()
+  "Register and commit all relevant files of the full wiki."
+  (interactive)
+  (org-glaux-vc-git-init-root)
+  (org-glaux--vc-git-commit-files
+   (directory-files-recursively org-glaux-location "^.*$")
+   'manual
+   "org-glaux: manual commit relevant files of the full wiki."))
+
 
 ;;; Internal functions
 ;;;; Internal -- Download
@@ -608,21 +649,26 @@ Argument WIKI-PATH: the link which is a wiki-path."
 (defun org-glaux--wiki-follow (wiki-path)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
 
-It pushes current wiki buffer into history so that `org-glaux-navi-back' can
-come back to it."
-  (let ((page-fpath (org-glaux--cur-wiki-path-fpath wiki-path)))
-    ;; push current file in page history stack
+- It pushes current wiki buffer into history so that `org-glaux-navi-back' can
+come back to it.
+- It returns the opened buffer."
+  (let ((page-fpath (org-glaux--cur-wiki-path-fpath wiki-path))
+	(dest-buffer))
+    ;; push current buffer in page history stack
     (when (org-glaux--is-buffer-in (current-buffer))
       (push buffer-file-name org-glaux--page-history))
+    ;; register & commit into vcs
+    (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
     (if (file-exists-p page-fpath)
 	;; if the page exists, open it
-	(progn (find-file page-fpath)
+	(progn (setq dest-buffer (find-file page-fpath))
 	       (when org-glaux-default-read-only (read-only-mode t)))
       ;; if the page doesn't exist, create it
-      (find-file page-fpath)
+      (setq dest-buffer (find-file page-fpath))
       (org-glaux--insert-header)
       (save-buffer)
-      (org-glaux--assets-make-dir page-fpath))))
+      (org-glaux--assets-make-dir page-fpath))
+    dest-buffer))
 
 (defun org-glaux--wiki-export (wiki-path desc format)
   "Export a wiki page WIKI-PATH from Org files.
@@ -656,7 +702,7 @@ Argument FORMAT format to export."
 		org-files)))
      dir-files)))
 
-(defun org-glaux--get-buffers ()
+(defun org-glaux--get-buffers-filename ()
   "Return all org-glaux page buffers filename under `org-glaux-location`."
   (org-glaux--init-location)
   (cl-remove-if-not
@@ -665,10 +711,10 @@ Argument FORMAT format to export."
 	    (fpath (if fp (expand-file-name fp))))
        ;; test if file exists
        (and  fpath
-	   ;; test if buffer file is under current wiki location
-	   (string-prefix-p (expand-file-name org-glaux-location) fpath)
 	   ;; test if buffer file has extension .org
-	   (string-suffix-p ".org" fpath))))
+	   (string-suffix-p ".org" fpath)
+	   ;; test if buffer file is under current wiki location
+	   (org-glaux--is-buffer-in buffer))))
    (buffer-list)))
 
 (defun org-glaux--page-files ()
@@ -845,6 +891,18 @@ Argument ORG-EXPORTER an org-exporter."
     (funcall callback (org-glaux--cur-page-assets-file target))))
 
 ;;;; Internal -- Version control
+
+(define-error 'org-glaux--vc-git-not-installed "Git is not installed")
+
+(defun org-glaux--vc-git-install-p ()
+  "Return non-nil if git is installed."
+  (executable-find vc-git-program))
+
+(defun org-glaux--vc-git-install-check ()
+  "Emit an error if git is not installed."
+  (unless (org-glaux--vc-git-install-p)
+    (signal 'org-glaux--vc-git-not-installed nil)))
+
 (defun org-glaux--vc-git-find-root (fpath)
   "Find the root of a project under VC from a FPATH.
 
@@ -852,38 +910,98 @@ Argument ORG-EXPORTER an org-exporter."
   If \".git\" is not found, return nil, otherwise return the root."
   (vc-find-root fpath ".git"))
 
-(defun org-glaux--vc-git-init-root ()
-  "Init the current wiki root as a git repository if it's not the case."
-  (unless (org-glaux--vc-git-find-root org-glaux-location)
-    (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
-      (with-current-buffer (find-file-noselect index)
-	(vc-git-create-repo)))))
+(defun org-glaux--vc-filter-files (files)
+  "Filter FILES according to `org-glaux-vc-*' settings.
 
-(defun org-glaux--vc-git-filter-files (files)
+See `org-glaux-vc-wiki-pages-only' and `org-glaux-vc-ignored-files-glob'."
   (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in files)))
     (if org-glaux-vc-wiki-pages-only
 	;; keep only wiki pages
 	(cl-remove-if-not
 	 (lambda (fpath) (string-suffix-p ".org" fpath))
 	 wiki-files)
-      ;; remove ignored files
-      (cl-remove-if ;; FIXME short-circuit evaluation
-       (lambda (fpath) (let ((remove? nil))
-		    (dolist (regex org-glaux-vc-ignored-regex remove?)
-		      (setq remove?
-			    (or remove?
-			       (string-match-p
-				;; glob to regex
-				(replace-regexp-in-string "\\*" ".*"
-							  (replace-regexp-in-string "\\." "\\\\."
-										    (format "^%s$" regex)))
-				fpath)))
-		      (message (format "%s" remove?)))))
-       wiki-files))))
+      (let ((ignored-patterns (mapcar (lambda (p) (org-glaux--glob2regex p))
+				      (append org-glaux-vc-ignored-files-glob org-glaux-vc-ignored-dirs-glob))))
+	;; remove ignored files
+	(cl-remove-if 
+	 (lambda (fpath)
+	   (let ((remove? nil))
+	     (dolist (regex ignored-patterns remove?)
+	       ;; TODO short-circuit evaluation
+	       (setq remove? (or remove? (string-match-p regex fpath))))))
+	 wiki-files)))))
 
 (defun org-glaux--vc-git-register-files (files)
-  (vc-git-register (org-glaux--vc-git-filter-files files)))
+  "Register FILES to commit according to `.gitignore' and filtering.
 
+Return number of files registered.
+See `org-glaux--vc-filter-files'."
+  (let* ((default-directory org-glaux-location)
+	 (potential-candidates (org-glaux--vc-filter-files files))
+	 (candidates (cl-remove-if
+		      (lambda (fpath)
+			;; if `org-glaux-vc-wiki-pages-only' is nil
+			;; ignore file according to `.gitignore'.
+			;;(message "%s" fpath)
+			(or (unless org-glaux-vc-wiki-pages-only
+			     (equal (vc-git-state fpath) 'ignored))
+			   (equal (vc-git-state fpath) 'up-to-date)
+			   (> (file-attribute-size
+			       (file-attributes fpath))
+			      org-glaux-vc-ignore-files-exceed-size)))
+		      potential-candidates)))
+    (org-glaux--batch-execute-list 'vc-git-register 50 candidates)
+    (length candidates)))
+
+(defun org-glaux--vc-git-commit (&optional message)
+  "Commit files into git with optional MESSAGE.
+
+Should be called after `org-glaux--vc-git-register-files'"
+  (let ((default-directory org-glaux-location))
+    (vc-git-command nil 0 nil
+		    "commit"
+		    "-m"
+		    (or message "org-glaux: automatic commit."))))
+
+(defun org-glaux--vc-git-commit-files (files context &optional message)
+  "Register and commit FILES depending the CONTEXT with optional MESSAGE.
+
+The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
+This function checks additionally possible errors.
+"
+  (when (and (equal org-glaux-vc-backend 'git)
+	   (or (equal 'manual context) ;; manual commit always accepted
+	      (equal org-glaux-vc-commit-when context)))
+    (condition-case err
+	(progn
+	  (org-glaux--vc-git-install-check)
+	  (when (> (org-glaux--vc-git-register-files files) 0)
+	    (org-glaux--vc-git-commit message)
+	    (message "org-glaux: modified wiki files are committed into git")))  
+      (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
+      (error (display-warning 'org-glaux (format "org-glaux: unable to register & commit files: %s" (error-message-string err)))))))
+
+;;;; Internal -- Miscellaneous
+(defun org-glaux--batch-execute-list (f size data-list)
+  "Execute function F per batch of DATA-LIST with size SIZE."
+  (let* ((sublist (butlast data-list (- (length data-list) size)))
+	 (offset size))
+    (while sublist
+      (funcall f sublist)
+      (setq sublist (butlast (nthcdr offset data-list) (- (length data-list) size offset)))
+      (setq offset (+ offset size)))))
+
+
+(defun org-glaux--glob2regex (glob)
+  "Convert glob expression to regex.
+
+- <glob-expr> -> ^<glob-expr>$
+- . -> \\.
+- * -> .*
+"
+  (replace-regexp-in-string "\\*" ".*"
+			    (replace-regexp-in-string "\\." "\\\\."
+						      (format "^%s$" glob))))
 ;;; Links
 ;;;; Wiki link
 ;; Hyperlinks to other wiki pages.
