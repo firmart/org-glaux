@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-05-10 dim. 13:59 -->
+<!-- 2020-05-10 dim. 14:01 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Customization</title>
@@ -36,7 +36,7 @@
 <li>List of org-glaux root directories.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-location-list '(<span class="org-string">"~/org/wiki"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-location-list '(<span class="org-string">"~/org/wiki"</span>))
 </pre>
 </div>
 
@@ -82,7 +82,7 @@ Default template used to create org-glaux pages/files.
 <li>Default index page (index.org) accessed with <code>M-x org-glaux-index</code></li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defvar</span> <span class="org-variable-name">org-glaux-index-file-basename</span> <span class="org-string">"index"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-index-file-basename <span class="org-string">"index"</span>)
 </pre>
 </div>
 </div>
@@ -139,7 +139,7 @@ instead. List of glob patterns to exclude file-path from version control.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-ignored-files-glob '(<span class="org-string">"*.html"</span> <span class="org-string">"*.bbl"</span> <span class="org-string">"*.tex"</span> <span class="org-string">"*~"</span> <span class="org-string">"*#*?#"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-ignored-files-glob '(<span class="org-string">"*.html"</span> <span class="org-string">"*.bbl"</span> <span class="org-string">"*.tex"</span> <span class="org-string">"*~"</span> <span class="org-string">"*#*?#"</span>))
 </pre>
 </div>
 

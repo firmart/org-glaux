@@ -11,7 +11,7 @@
 * General settings
 - List of org-glaux root directories.
 #+begin_src emacs-lisp 
-(setq org-glaux-location-list '("~/org/wiki")
+(setq org-glaux-location-list '("~/org/wiki"))
 #+end_src
 
 - If this variable is non-nil all org-glaux pages will be read-only by default. 
@@ -43,7 +43,7 @@ Default template used to create org-glaux pages/files.
 
 - Default index page (index.org) accessed with ~M-x org-glaux-index~
 #+begin_src emacs-lisp 
-(defvar org-glaux-index-file-basename "index")
+(setq org-glaux-index-file-basename "index")
 #+end_src
 
 * Version control settings
@@ -79,7 +79,7 @@ per-directory files pattern to ignore, include them in a local `.gitignore'
 instead. List of glob patterns to exclude file-path from version control.
 
 #+begin_src emacs-lisp 
-(setq org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#")
+(setq org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#"))
 #+end_src
 
 - If non-nil, the version control applies only on wiki pages (.org files).
