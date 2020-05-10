@@ -98,8 +98,14 @@ You can toggle read-only mode with \\<read-only-mode>."
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
 
+(defcustom org-glaux-save-on-follow-p nil
+  "If \\[t], save current buffer before following a page link."
+  :type 'boolean
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.2"))
+
 ;;;; Version control settings
-;; TODO add other vcs
+;; TODO add other vcs on request
 (defcustom org-glaux-vc-backend 'git
   "Activate edit history using version control software."
   :type '(radio (const :tag "git" :value 'git)
@@ -238,7 +244,7 @@ instead."
 	 (cl-remove-if-not 'org-glaux--is-buffer-in (buffer-list))))
     (mapc (lambda (b) (with-current-buffer b (save-buffer))) wiki-buffers)
     ;; register and commit
-    (org-glaux--vc-git-commit-files 
+    (org-glaux--vc-git-commit-files
      (mapcar 'buffer-file-name wiki-buffers)
      'close
      "org-glaux: automatic commit on close")
@@ -571,7 +577,8 @@ Note: This command requires Python3 installed."
   "Init the current wiki root as a git repository if it's not the case."
   (interactive)
   (org-glaux--vc-git-install-check)
-  (unless (org-glaux--vc-git-find-root org-glaux-location)
+  (unless (and (org-glaux--vc-git-find-root org-glaux-location)
+	     (equal org-glaux-vc-backend nil))
     (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
       (with-current-buffer (find-file-noselect index)
 	(vc-git-create-repo)))))
@@ -658,12 +665,16 @@ Argument WIKI-PATH: the link which is a wiki-path."
 come back to it.
 - It returns the opened buffer."
   (let ((page-fpath (org-glaux--cur-wiki-path-fpath wiki-path))
-	(dest-buffer))
+	(dest-buffer)
+	(cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
     (when (org-glaux--is-buffer-in (current-buffer))
-      (push buffer-file-name org-glaux--page-history))
-    ;; register & commit into vcs
+      (push cur-buf-fpath org-glaux--page-history))
+    ;; register & commit into vcs (if in follow mode)
     (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
+    ;; save current buffer if it's customized so
+    (when (org-glaux-save-on-follow-p)
+      (save-buffer))
     (if (file-exists-p page-fpath)
 	;; if the page exists, open it
 	(progn (setq dest-buffer (find-file page-fpath))
@@ -672,6 +683,9 @@ come back to it.
       (setq dest-buffer (find-file page-fpath))
       (org-glaux--insert-header)
       (save-buffer)
+      ;; refontify previous buffer as the wiki link exist now
+      (with-current-buffer (find-file-noselect cur-buf-fpath)
+	(font-lock-flush))
       (org-glaux--assets-make-dir page-fpath))
     dest-buffer))
 
@@ -928,7 +942,7 @@ See `org-glaux-vc-wiki-pages-only' and `org-glaux-vc-ignored-files-glob'."
       (let ((ignored-patterns (mapcar (lambda (p) (org-glaux--glob2regex p))
 				      (append org-glaux-vc-ignored-files-glob org-glaux-vc-ignored-dirs-glob))))
 	;; remove ignored files
-	(cl-remove-if 
+	(cl-remove-if
 	 (lambda (fpath)
 	   (let ((remove? nil))
 	     (dolist (regex ignored-patterns remove?)
@@ -972,8 +986,7 @@ Should be called after `org-glaux--vc-git-register-files'"
   "Register and commit FILES depending the CONTEXT with optional MESSAGE.
 
 The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
-This function checks additionally possible errors.
-"
+This function checks additionally possible errors."
   (when (and (equal org-glaux-vc-backend 'git)
 	   (or (equal 'manual context) ;; manual commit always accepted
 	      (equal org-glaux-vc-commit-when context)))
@@ -982,7 +995,7 @@ This function checks additionally possible errors.
 	  (org-glaux--vc-git-install-check)
 	  (when (> (org-glaux--vc-git-register-files files) 0)
 	    (org-glaux--vc-git-commit message)
-	    (message "org-glaux: modified wiki files are committed into git")))  
+	    (message "org-glaux: modified wiki files are committed into git")))
       (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
       (error (display-warning 'org-glaux (format "org-glaux: unable to register & commit files: %s" (error-message-string err)))))))
 
@@ -998,12 +1011,11 @@ This function checks additionally possible errors.
 
 
 (defun org-glaux--glob2regex (glob)
-  "Convert glob expression to regex.
+  "Convert GLOB expression to regex.
 
 - <glob-expr> -> ^<glob-expr>$
 - . -> \\.
-- * -> .*
-"
+- * -> .*"
   (replace-regexp-in-string "\\*" ".*"
 			    (replace-regexp-in-string "\\." "\\\\."
 						      (format "^%s$" glob))))
