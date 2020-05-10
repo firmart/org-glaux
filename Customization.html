@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-05-10 dim. 13:55 -->
+<!-- 2020-05-10 dim. 13:59 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Customization</title>
@@ -17,11 +17,11 @@
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org964a5f7">1. General settings</a></li>
-<li><a href="#orgbdfbdd3">2. Version control settings</a></li>
-<li><a href="#org8542c0e">3. Python webserver settings</a></li>
-<li><a href="#org1ecffa0">4. Async export settings</a></li>
-<li><a href="#org8027b19">5. Backup settings</a></li>
+<li><a href="#orgbc91f23">1. General settings</a></li>
+<li><a href="#org6ed0f83">2. Version control settings</a></li>
+<li><a href="#org124e66b">3. Python webserver settings</a></li>
+<li><a href="#orgcfb5288">4. Async export settings</a></li>
+<li><a href="#org715e175">5. Backup settings</a></li>
 </ul>
 </div>
 </nav>
@@ -29,8 +29,8 @@
 <code>org-glaux</code> can be customized under the group <code>tools/org-glaux</code>. 
 </p>
 
-<div id="outline-container-org964a5f7" class="outline-2">
-<h2 id="org964a5f7"><span class="section-number-2">1</span> General settings</h2>
+<div id="outline-container-orgbc91f23" class="outline-2">
+<h2 id="orgbc91f23"><span class="section-number-2">1</span> General settings</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
 <li>List of org-glaux root directories.</li>
@@ -44,7 +44,7 @@
 <li>If this variable is non-nil all org-glaux pages will be read-only by default.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-default-read-only</span> nil)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-default-read-only nil)
 </pre>
 </div>
 
@@ -52,7 +52,7 @@
 <li>If set, all org-glaux pages are closed when root directory is switched.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-close-root-switch</span> t)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-close-root-switch t)
 </pre>
 </div>
 
@@ -64,7 +64,7 @@ Default template used to create org-glaux pages/files.
 <li>%d - is replaced by current date in the format year-month-day.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-template</span>
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-template
   (string-trim
    <span class="org-string">"</span>
 <span class="org-string">#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil</span>
@@ -88,8 +88,8 @@ Default template used to create org-glaux pages/files.
 </div>
 </div>
 
-<div id="outline-container-orgbdfbdd3" class="outline-2">
-<h2 id="orgbdfbdd3"><span class="section-number-2">2</span> Version control settings</h2>
+<div id="outline-container-org6ed0f83" class="outline-2">
+<h2 id="org6ed0f83"><span class="section-number-2">2</span> Version control settings</h2>
 <div class="outline-text-2" id="text-2">
 <ul class="org-ul">
 <li>Activate edit history using version control software (VCS)
@@ -99,7 +99,7 @@ Default template used to create org-glaux pages/files.
 </ul></li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-backend</span> 'git)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-backend 'git)
 </pre>
 </div>
 
@@ -107,7 +107,7 @@ Default template used to create org-glaux pages/files.
 <li>Do not register file having size exceeding an amount of bytes.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-ignore-files-exceed-size</span> (* 150 1024 1024))
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-ignore-files-exceed-size (* 150 1024 1024))
 </pre>
 </div>
 
@@ -123,7 +123,7 @@ instead.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-ignored-dirs-glob</span>
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-ignored-dirs-glob
   (append '(<span class="org-string">"*ltximg*"</span> <span class="org-string">"*_minted*"</span>)
           (mapcar (<span class="org-keyword">lambda</span> (d) (format <span class="org-string">"*%s*"</span> d)) vc-directory-exclusion-list)))
 </pre>
@@ -139,7 +139,7 @@ instead. List of glob patterns to exclude file-path from version control.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-ignored-files-glob</span> '(<span class="org-string">"*.html"</span> <span class="org-string">"*.bbl"</span> <span class="org-string">"*.tex"</span> <span class="org-string">"*~"</span> <span class="org-string">"*#*?#"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-ignored-files-glob '(<span class="org-string">"*.html"</span> <span class="org-string">"*.bbl"</span> <span class="org-string">"*.tex"</span> <span class="org-string">"*~"</span> <span class="org-string">"*#*?#"</span>)
 </pre>
 </div>
 
@@ -147,7 +147,7 @@ instead. List of glob patterns to exclude file-path from version control.
 <li>If non-nil, the version control applies only on wiki pages (.org files).</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-wiki-pages-only</span> nil)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-wiki-pages-only nil)
 </pre>
 </div>
 
@@ -161,20 +161,20 @@ instead. List of glob patterns to exclude file-path from version control.
 </ul>
 
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-vc-commit-when</span> 'close)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-vc-commit-when 'close)
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org8542c0e" class="outline-2">
-<h2 id="org8542c0e"><span class="section-number-2">3</span> Python webserver settings</h2>
+<div id="outline-container-org124e66b" class="outline-2">
+<h2 id="org124e66b"><span class="section-number-2">3</span> Python webserver settings</h2>
 <div class="outline-text-2" id="text-3">
 <ul class="org-ul">
 <li>Default port to server org-glaux static files server.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-server-port</span> <span class="org-string">"8000"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-server-port <span class="org-string">"8000"</span>)
 </pre>
 </div>
 
@@ -182,33 +182,33 @@ instead. List of glob patterns to exclude file-path from version control.
 <li>Default address that the server listens to.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-server-host</span> <span class="org-string">"0.0.0.0"</span>)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-server-host <span class="org-string">"0.0.0.0"</span>)
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org1ecffa0" class="outline-2">
-<h2 id="org1ecffa0"><span class="section-number-2">4</span> Async export settings</h2>
+<div id="outline-container-orgcfb5288" class="outline-2">
+<h2 id="orgcfb5288"><span class="section-number-2">4</span> Async export settings</h2>
 <div class="outline-text-2" id="text-4">
 <ul class="org-ul">
 <li>Additional options passed to `org-publish'.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-publish-plist</span> '())
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-publish-plist '())
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-org8027b19" class="outline-2">
-<h2 id="org8027b19"><span class="section-number-2">5</span> Backup settings</h2>
+<div id="outline-container-org715e175" class="outline-2">
+<h2 id="org715e175"><span class="section-number-2">5</span> Backup settings</h2>
 <div class="outline-text-2" id="text-5">
 <ul class="org-ul">
 <li>Path to backup directory.</li>
 </ul>
 <div class="org-src-container">
-<pre class="src src-emacs-lisp">(<span class="org-keyword">defcustom</span> <span class="org-variable-name">org-glaux-backup-location</span> nil)
+<pre class="src src-emacs-lisp">(<span class="org-keyword">setq</span> org-glaux-backup-location nil)
 </pre>
 </div>
 </div>

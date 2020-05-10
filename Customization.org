@@ -16,19 +16,19 @@
 
 - If this variable is non-nil all org-glaux pages will be read-only by default. 
 #+begin_src emacs-lisp
-(defcustom org-glaux-default-read-only nil)
+(setq org-glaux-default-read-only nil)
 #+end_src
 
 - If set, all org-glaux pages are closed when root directory is switched.
 #+begin_src emacs-lisp 
-(defcustom org-glaux-close-root-switch t)
+(setq org-glaux-close-root-switch t)
 #+end_src
 
 Default template used to create org-glaux pages/files.
 - %n - is replaced by the page name.
 - %d - is replaced by current date in the format year-month-day.
 #+begin_src emacs-lisp 
-(defcustom org-glaux-template
+(setq org-glaux-template
   (string-trim
    "
 #+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
@@ -52,12 +52,12 @@ Default template used to create org-glaux pages/files.
   - ~'git~: for git support
   - ~nil~: no version control
 #+begin_src emacs-lisp 
-(defcustom org-glaux-vc-backend 'git)
+(setq org-glaux-vc-backend 'git)
 #+end_src
 
 - Do not register file having size exceeding an amount of bytes.
 #+begin_src emacs-lisp 
-(defcustom org-glaux-vc-ignore-files-exceed-size (* 150 1024 1024))
+(setq org-glaux-vc-ignore-files-exceed-size (* 150 1024 1024))
 #+end_src
 
 
@@ -68,7 +68,7 @@ per-directory files pattern to ignore, include them in a local `.gitignore'
 instead.
 
 #+begin_src emacs-lisp 
-(defcustom org-glaux-vc-ignored-dirs-glob
+(setq org-glaux-vc-ignored-dirs-glob
   (append '("*ltximg*" "*_minted*")
 	  (mapcar (lambda (d) (format "*%s*" d)) vc-directory-exclusion-list)))
 #+end_src
@@ -79,12 +79,12 @@ per-directory files pattern to ignore, include them in a local `.gitignore'
 instead. List of glob patterns to exclude file-path from version control.
 
 #+begin_src emacs-lisp 
-(defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#")
+(setq org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#")
 #+end_src
 
 - If non-nil, the version control applies only on wiki pages (.org files).
 #+begin_src emacs-lisp :tangle yes
-(defcustom org-glaux-vc-wiki-pages-only nil)
+(setq org-glaux-vc-wiki-pages-only nil)
 #+end_src
 
 - "Indicate when files are registered in version control and committed."
@@ -93,31 +93,31 @@ instead. List of glob patterns to exclude file-path from version control.
   - ~'manual~ : always commit manually
   
 #+begin_src emacs-lisp 
-(defcustom org-glaux-vc-commit-when 'close)
+(setq org-glaux-vc-commit-when 'close)
 #+end_src
 
 * Python webserver settings
   
 - Default port to server org-glaux static files server. 
 #+begin_src emacs-lisp :tangle yes
-(defcustom org-glaux-server-port "8000")
+(setq org-glaux-server-port "8000")
 #+end_src
 
 - Default address that the server listens to.
 #+begin_src emacs-lisp 
-(defcustom org-glaux-server-host "0.0.0.0")
+(setq org-glaux-server-host "0.0.0.0")
 #+end_src
 
 * Async export settings
   
 - Additional options passed to `org-publish'.
 #+begin_src emacs-lisp
-(defcustom org-glaux-publish-plist '())
+(setq org-glaux-publish-plist '())
 #+end_src
 
 * Backup settings
 
 - Path to backup directory.
 #+begin_src emacs-lisp 
-(defcustom org-glaux-backup-location nil)
+(setq org-glaux-backup-location nil)
 #+end_src
