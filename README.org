@@ -5,7 +5,7 @@ Glaux (/[[https://en.wiktionary.org/wiki/%CE%B3%CE%BB%CE%B1%E1%BF%A6%CE%BE#Ancie
 - Support backward navigation (~org-glaux-navi-back~).
 - Support sub-directories.
 - Support dead wiki link highlighting.
-- Support git integration and automatic commit.
+- Support edit history (with ~git~ + automatic commit).
 - and more...
 ** Installation
    
@@ -51,7 +51,7 @@ configuration can be found below.
 #+end_src
 
 ** Link formats
-Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-like]].
+Relative links are in [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-style]].
 *** Wiki link
 
     #+BEGIN_SRC org 
@@ -62,17 +62,16 @@ Relative links are [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wiki
 	[[wiki:Linux][Linux]]  
     #+END_SRC
 
-  |---------------------------+---------------------------------------------------------|
-  | Link                      | To                                                      |
-  |---------------------------+---------------------------------------------------------|
+  |---------------------------+----------------------------------------------------------|
+  | Link                      | To                                                       |
+  |---------------------------+----------------------------------------------------------|
   | ~wiki:path/to/<pagename>~ | Absolute path: ~<org-glaux-location>/path/to/<pagename>~ |
-  | ~wiki:/<pagename>~        | Child page: ~<current_page>/<pagename>~                 |
-  | ~wiki:../~                | Parent page                                             |
-  | ~wiki:../<pagename>~      | Sibling page                                            |
-  |---------------------------+---------------------------------------------------------|
+  | ~wiki:/<pagename>~        | Child page: ~<current_page>/<pagename>~                  |
+  | ~wiki:../~                | Parent page                                              |
+  | ~wiki:../<pagename>~      | Sibling page                                             |
+  |---------------------------+----------------------------------------------------------|
 
 ** Wishlist
- - Support edition history using VCS: git/svn/mercurial
  - Support showing page description on point
  - Support image gallery
 ** Credits

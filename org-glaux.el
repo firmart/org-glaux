@@ -92,8 +92,12 @@ You can toggle read-only mode with \\<read-only-mode>."
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
 
-;; Default index page (index.org) accessed with M-x org-glaux-index
-(defvar org-glaux-index-file-basename "index")
+(defcustom org-glaux-index-file-basename "index"
+  "Default index page (index.org) accessed with \\<org-glaux-index>."
+  :type 'string
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.1"))
+
 ;;;; Version control settings
 ;; TODO add other vcs
 (defcustom org-glaux-vc-backend 'git
@@ -437,7 +441,7 @@ Note: This function is synchronous and blocks Emacs."
       (unless prev-page
 	(org-glaux--init-location)
 	(setq prev-page (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename))))
-    (find-file prev-page)))
+    (org-glaux--wiki-follow (org-glaux--file-wiki-path prev-page))))
 
 ;;;; Search
 
