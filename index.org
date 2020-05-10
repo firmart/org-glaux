@@ -12,4 +12,5 @@
 - [[wiki:select][Select page/buffer/root]]
 - [[wiki:navigation][Page navigation]]
 - [[wiki:TODOs][TODOs]]
+- [[wiki:Edit_history][Edit history]]
 - [[wiki:Tips][Tips]]
