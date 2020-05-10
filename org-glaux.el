@@ -404,6 +404,7 @@ Note: This function is synchronous and blocks Emacs."
 	  (org-glaux--easy-menu-entry "Search" "org-glaux-search")
 	  (org-glaux--easy-menu-entry "Select" "org-glaux-select")
 	  (org-glaux--easy-menu-entry "Server" "org-glaux-server")
+	  (org-glaux--easy-menu-entry "Version control" "org-glaux-vc")
 	  ["---" nil]
 	  (list "Miscellaneous"
 		(vector (documentation 'org-glaux-new-page) 'org-glaux-new-page)

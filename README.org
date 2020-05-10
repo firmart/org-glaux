@@ -5,6 +5,7 @@ Glaux (/[[https://en.wiktionary.org/wiki/%CE%B3%CE%BB%CE%B1%E1%BF%A6%CE%BE#Ancie
 - Support backward navigation (~org-glaux-navi-back~).
 - Support sub-directories.
 - Support dead wiki link highlighting.
+- Support git integration and automatic commit.
 - and more...
 ** Installation
    
