@@ -7,7 +7,7 @@
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
 
 ** TODO Wishlists
-   - Support showing page description on point
+   - Support showing page description on point ([[https://emacs.stackexchange.com/questions/26674/tooltip-on-inline-images-in-org-mode][tooltip on inline images in org-mode]])
    - Support image gallery
 ** TODO TODO tasks [13%]
    
