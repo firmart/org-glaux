@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-05-11 lun. 04:21 -->
+<!-- 2020-05-11 lun. 14:44 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TODOs</title>
@@ -60,8 +60,33 @@
 <li class="off"><input type='checkbox' /> Consider <code>org-attach</code> before implementing download-related function.</li>
 <li class="on"><input type='checkbox' checked='checked' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/ert/index.html">ERT: Emacs Lisp Regression Testing</a>. Especially for all kind of function computing path.</li>
 <li class="off"><input type='checkbox' /> In all interactive functions: check if current buffer is under an org-glaux dir</li>
-<li class="off"><input type='checkbox' /> Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
+<li class="trans"><input type='checkbox' /> Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
 <ul class="org-ul">
+<li class="trans"><input type='checkbox' /> Be inspired by <a href="https://en.wikipedia.org/wiki/Wikipedia:Statistics">Wikipedia statistics</a>
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> Graph stats
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> Density (link + backlink)</li>
+</ul></li>
+<li class="trans"><input type='checkbox' /> Links stats
+<ul class="org-ul">
+<li class="on"><input type='checkbox' checked='checked' /> avg</li>
+<li class="off"><input type='checkbox' /> median</li>
+<li class="off"><input type='checkbox' /> min, max</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> Backlinks stats
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> show limited number of orphan pages (0 back links)</li>
+</ul></li>
+<li class="on"><input type='checkbox' checked='checked' /> Pages stats
+<ul class="org-ul">
+<li class="on"><input type='checkbox' checked='checked' /> pages count</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> Edit stats
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> Frequently edited pages</li>
+</ul></li>
+</ul></li>
 <li class="off"><input type='checkbox' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html">progress bar</a> for time-consuming task</li>
 </ul></li>
 <li class="off"><input type='checkbox' /> Provide lint function listing all break link and suggesting quick fix Ref. <a href="https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks">correcting-and-maintaining-org-mode-hyperlinks</a></li>
@@ -78,6 +103,12 @@
 <li class="off"><input type='checkbox' /> Use <code>index</code> as wiki settings file and <code>index/</code> as general assets directory</li>
 <li class="on"><input type='checkbox' checked='checked' /> Add test suites</li>
 <li class="off"><input type='checkbox' /> Add Travis</li>
+<li class="off"><input type='checkbox' /> Add variant of automatic-commit
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> <code>close+follow</code></li>
+<li class="off"><input type='checkbox' /> <code>save</code></li>
+<li class="off"><input type='checkbox' /> <code>save+follow</code></li>
+</ul></li>
 </ul>
 </div>
 </div>
