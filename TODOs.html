@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-05-10 dim. 14:01 -->
+<!-- 2020-05-11 lun. 04:21 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TODOs</title>
@@ -27,7 +27,7 @@
 <h2 id="orgb3bcac0"><span class="section-number-2">1</span> <span class="todo TODO">TODO</span> Wishlists</h2>
 <div class="outline-text-2" id="text-1">
 <ul class="org-ul">
-<li>Support showing page description on point</li>
+<li>Support showing page description on point (<a href="https://emacs.stackexchange.com/questions/26674/tooltip-on-inline-images-in-org-mode">tooltip on inline images in org-mode</a>)</li>
 <li>Support image gallery</li>
 </ul>
 </div>
@@ -56,12 +56,15 @@
 <li class="off"><input type='checkbox' /> org-glaux's version of <code>org-export-dispatch</code>.</li>
 <li class="off"><input type='checkbox' /> Fix new page overwriting header if parent directories doesn't exist.</li>
 <li class="off"><input type='checkbox' /> Add copy/renaming/moving page/assets facility</li>
+<li class="off"><input type='checkbox' /> Add better template support like yas-snippets</li>
 <li class="off"><input type='checkbox' /> Consider <code>org-attach</code> before implementing download-related function.</li>
 <li class="on"><input type='checkbox' checked='checked' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/ert/index.html">ERT: Emacs Lisp Regression Testing</a>. Especially for all kind of function computing path.</li>
 <li class="off"><input type='checkbox' /> In all interactive functions: check if current buffer is under an org-glaux dir</li>
-<li class="off"><input type='checkbox' /> Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)</li>
+<li class="off"><input type='checkbox' /> Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html">progress bar</a> for time-consuming task</li>
+</ul></li>
 <li class="off"><input type='checkbox' /> Provide lint function listing all break link and suggesting quick fix Ref. <a href="https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks">correcting-and-maintaining-org-mode-hyperlinks</a></li>
-<li class="off"><input type='checkbox' /> Generate html file by comparing created time with org file (speedup)</li>
 <li class="off"><input type='checkbox' /> Replace <code>find-file</code> by <code>with-temp-buffer</code> + <code>insert-file-contents</code>. See <a href="https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect">here</a>.</li>
 <li class="off"><input type='checkbox' /> Use <a href="https://gongzhitaao.org/orgcss/">https://gongzhitaao.org/orgcss/</a> as default css instead the default one.</li>
 <li class="off"><input type='checkbox' /> add custom group to exclude dirs and files for the backup.</li>
@@ -72,7 +75,6 @@
 </ul></li>
 <li class="off"><input type='checkbox' /> provide key-map + minor-mode? (to make local keybindings possible)</li>
 <li class="off"><input type='checkbox' /> Extend <code>org-glaux--wiki-follow</code> to something like <code>:file</code> link. Ref. <code>org-link-open</code> and <a href="https://orgmode.org/manual/External-Links.html">External-links</a>. Support header searching.</li>
-<li class="off"><input type='checkbox' /> Bring a tag system.</li>
 <li class="off"><input type='checkbox' /> Use <code>index</code> as wiki settings file and <code>index/</code> as general assets directory</li>
 <li class="on"><input type='checkbox' checked='checked' /> Add test suites</li>
 <li class="off"><input type='checkbox' /> Add Travis</li>
