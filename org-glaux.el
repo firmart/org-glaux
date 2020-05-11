@@ -577,8 +577,8 @@ Note: This command requires Python3 installed."
   "Init the current wiki root as a git repository if it's not the case."
   (interactive)
   (org-glaux--vc-git-install-check)
-  (unless (and (org-glaux--vc-git-find-root org-glaux-location)
-	     (equal org-glaux-vc-backend nil))
+  (when (and (not (org-glaux--vc-git-find-root org-glaux-location))
+	   (equal org-glaux-vc-backend 'git))
     (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
       (with-current-buffer (find-file-noselect index)
 	(vc-git-create-repo)))))
@@ -1169,19 +1169,20 @@ Should be called after `org-glaux--vc-git-register-files'"
 (defun org-glaux--vc-git-commit-files (files context &optional message)
   "Register and commit FILES depending the CONTEXT with optional MESSAGE.
 
-The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
-This function checks additionally possible errors."
+- The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
+- This function checks additionally possible errors."
   (when (and (equal org-glaux-vc-backend 'git)
 	   ;; 'manual commit always accepted.
 	   (member context (list 'manual org-glaux-vc-commit-when)))
     (condition-case err
 	(progn
 	  (org-glaux--vc-git-install-check)
-	  (when (> (org-glaux--vc-git-register-files files) 0)
-	    ;; unconditionally remove removed files
-	    (org-glaux--vc-git-register-removed-files)
-	    (org-glaux--vc-git-commit message)
-	    (message "org-glaux: modified wiki files are committed into git")))
+	  (let ((register-count (org-glaux--vc-git-register-files files)))
+	    (when (> register-count 0)
+	      ;; unconditionally remove removed files
+	      (org-glaux--vc-git-register-removed-files)
+	      (org-glaux--vc-git-commit message)
+	      (message "org-glaux: modified wiki files are committed into git"))))
       (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
       (error (display-warning 'org-glaux (format "org-glaux: unable to register & commit files: %s" (error-message-string err)))))))
 
