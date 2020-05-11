@@ -8,6 +8,12 @@
 (ert-deftest org-glaux-test-make-link ())
 (ert-deftest org-glaux-test-wiki-follow ())
 (ert-deftest org-glaux-test-wiki-export ())
+;;;; Internal -- Computation
+(ert-deftest org-glaux-test-calc-median ()
+  ;; odd length list
+  (should (equal (org-glaux--calc-median '(1 3 3 6 7 8 9)) 6))
+  ;; even length list
+  (should (equal (org-glaux--calc-median '(1 2 3 4 5 6 8 9)) 4.5)))
 ;;;; Internal -- List
 (ert-deftest org-glaux-test-assets-page-files ())
 (ert-deftest org-glaux-test-get-buffers ())
@@ -67,16 +73,21 @@
 		 "/path/to/test.c"
 		 "/path/to/test.h"
 	         "/external/path/to/test.org"))
-	(org-glaux-vc-ignored-wildcard '("*.[ch]"))
+	(org-glaux-vc-ignored-files-glob '("*.[ch]"))
+	(org-glaux-vc-ignored-dirs-glob
+	 (append '("*ltximg*" "*_minted*")
+		 (mapcar (lambda (d) (format "*%s*" d)) vc-directory-exclusion-list)))
+	(org-glaux-vc-backend 'git)
+	(org-glaux-vc-wiki-pages-only nil)
 	(org-glaux-location "/path/to"))
     ;; `org-glaux-vc-wiki-pages-only' overwrites `org-glaux-vc-ignored-regex'
     (should (equal
 	     (let ((org-glaux-vc-wiki-pages-only t))
-	       (org-glaux--vc-git-filter-files files))
+	       (org-glaux--vc-filter-files files))
 	     '("/path/to/test.org" "/path/to/test2.org")))
     ;; remove *.[ch]
     (should (equal
 	     (let ((org-glaux-vc-wiki-pages-only nil))
-	       (org-glaux--vc-git-filter-files files))
+	       (org-glaux--vc-filter-files files))
 	     '("/path/to/test.org" "/path/to/test2.org" "/path/to/test.tar.gz")))))
 (ert-deftest org-glaux--vc-git-register-files ())
