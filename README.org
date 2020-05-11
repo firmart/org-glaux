@@ -51,16 +51,7 @@ configuration can be found below.
 #+end_src
 
 ** Link formats
-Relative links are in [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-style]].
-*** Wiki link
-
-    #+BEGIN_SRC org 
-	wiki:Linux 
-    or 
-	[[wiki:Linux]]
-    or
-	[[wiki:Linux][Linux]]  
-    #+END_SRC
+   Wiki-links are in [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-style]].
 
   |---------------------------+----------------------------------------------------------|
   | Link                      | To                                                       |
