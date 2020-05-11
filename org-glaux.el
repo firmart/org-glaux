@@ -711,15 +711,18 @@ Argument FORMAT format to export."
 	(when (string= (org-element-property :type link) link-type)
 	  (org-element-property :path link))))))
 
-(defun org-glaux--get-all-wiki-links-by-page ()
-  "Return an alist in which each entry has the form (PAGE-FPATH . WIKI-LINKS)."
+(defun org-glaux--get-all-links-by-page (&optional link-type)
+  "Return an alist in which each entry has the form (PAGE-FPATH . LINK-TYPE list).
+LINK-TYPE default to wiki type."
   (mapcar (lambda (f)
-	    (cons f (org-glaux--get-file-links f "wiki")))
+	    (cons f (org-glaux--get-file-links f (or link-type "wiki"))))
 	  (org-glaux--page-files)))
 
-(defun org-glaux--get-page-back-links (fpath)
-  "Return a list of page's file-path which has a wiki-link to FPATH."
-  (let ((wlbp (org-glaux--get-all-wiki-links-by-page))
+(defun org-glaux--get-page-back-links (fpath &option wlbp)
+  "Return a list of page's file-path which has a wiki-link to FPATH.
+
+WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
+  (let ((wlbp (or wlbp (org-glaux--get-all-links-by-page)))
 	(back-links))
     (dolist (entry wlbp back-links)
       (let ((page-path (car entry))
@@ -742,27 +745,60 @@ Argument FORMAT format to export."
 	(kill-buffer bname))
       (switch-to-buffer bname)
       (org-mode)
-      (let ((wlbp (org-glaux--get-all-wiki-links-by-page)))
+      (let* ((wlbp (org-glaux--get-all-links-by-page "wiki"))
+	     (wlcbp (org-glaux--get-links-count-by-page wlbp)))
 	(org-insert-heading)
-	(insert "Pages stats\n")
+	(insert "Pages Stats\n")
 	(insert (format "  - Pages count: %d" (length wlbp)))
 	(org-insert-heading)
-	(insert "Links stats\n")
-	(insert (format "  - average number of links by page: %.2f\n" (org-glaux--get-avg-links-per-page wlbp)))))))
+	(insert "Wiki Links Stats\n")
+	(insert (format "  - Total links: %d\n" (apply '+ wlcbp)))
+	(insert (format "  - Links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
+			(seq-min wlcbp)
+			(org-glaux--get-median-links-per-page wlbp wlcbp)
+			(org-glaux--get-avg-links-per-page wlbp wlcbp)
+			(seq-max wlcbp)))))))
 
-(defun org-glaux--get-avg-links-per-page (&optional wlbp links-count pages-count)
-  "Compute the average number of links by page.
+(defun org-glaux--get-avg-links-per-page (lbp &optional links-count-by-page pages-count)
+  "Given LBP (links by page), compute the average number of links by page.
 
-WLBP (wiki links by page), LINKS-COUNT and PAGES-COUNT are recomputed
-when needed."
-  (let* ((wlbp (or wlbp (org-glaux--get-all-wiki-links-by-page)))
-	 (links-count (or links-count
-			 (apply #'+ (mapcar
-				     (lambda (entry)
-				       (length (remove-duplicates (cdr entry))))
-				     wlbp))))
-	 (pages-count (or pages-count (length wlbp))))
-    (/ (float links-count) pages-count)))
+LINKS-COUNT-BY-PAGE and PAGES-COUNT are computed when needed."
+  (let* ((links-count-by-page (or links-count-by-page (org-glaux--get-links-count-by-page lbp)))
+	 (pages-count (or pages-count (length lbp))))
+    (/ (float (apply #'+ links-count-by-page)) pages-count)))
+
+(defun org-glaux--get-median-links-per-page (lbp &optional links-count-by-page)
+  "Given LBP (links by page), compute the median of links by page.
+
+LINKS-COUNT-BY-PAGE is computed when needed."
+  (let ((links-count-by-page (or links-count-by-page
+				(org-glaux--get-links-count-by-page lbp))))
+    (org-glaux--calc-median links-count-by-page)))
+
+(defun org-glaux--get-links-count-by-page (lbp)
+  "Given LBP (links by page), compute the number of links by page.
+
+Duplicated links are removed.
+"
+  (mapcar
+   (lambda (entry) (length (remove-duplicates (cdr entry))))
+   lbp))
+
+;;;; Internal -- Computation
+(defun org-glaux--calc-median (nlist)
+  "Return the mean of the number list NLIST."
+  (let* ((sortl (sort nlist '<))
+	 (len (length sortl)))
+    (if (oddp len)
+	(nth (/ len 2) sortl)
+      ;; mean of the two middle numbers
+      (/ (+ (nth ;; (len + 1)/2 - 1
+	     (- (/ (+ len 1) 2) 1)
+	     sortl)
+	    (nth ;; (len + 1)/2
+	     (/ (+ len 1) 2)
+	     sortl))
+	 (float 2)))))
 
 ;;;; Internal -- List
 (defun org-glaux--assets-page-files (dirpath)
