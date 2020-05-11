@@ -704,6 +704,7 @@ Argument FORMAT format to export."
 ;;;;; Links Utilities
 ;; TODO close file if it wasn't opened
 (defun org-glaux--get-file-links (fpath link-type)
+  "Return all links of type LINK-TYPE appearing in file FPATH."
   (with-current-buffer (find-file-noselect fpath)
     (org-element-map (org-element-parse-buffer) 'link
       (lambda (link)
@@ -711,17 +712,19 @@ Argument FORMAT format to export."
 	  (org-element-property :path link))))))
 
 (defun org-glaux--get-all-wiki-links-by-page ()
-  (mapcar (lambda (f) (cons f (org-glaux--get-file-links f "wiki"))) (org-glaux--page-files)))
+  "Return an alist in which each entry has the form (PAGE-FPATH . WIKI-LINKS)."
+  (mapcar (lambda (f)
+	    (cons f (org-glaux--get-file-links f "wiki")))
+	  (org-glaux--page-files)))
 
 (defun org-glaux--get-page-back-links (fpath)
+  "Return a list of page's file-path which has a wiki-link to FPATH."
   (let ((wlbp (org-glaux--get-all-wiki-links-by-page))
 	(back-links))
     (dolist (entry wlbp back-links)
       (let ((page-path (car entry))
 	    (wpath-list (cdr entry)))
-	(message "%s" entry)
 	(when (some (lambda (wpath)
-		      (message "%s vs %s" (org-glaux--wiki-path-fpath wpath page-path) (expand-file-name fpath))
 		      (string= (org-glaux--wiki-path-fpath wpath page-path)
 			       (expand-file-name fpath)))
 		    wpath-list)
