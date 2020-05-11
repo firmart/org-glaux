@@ -248,7 +248,7 @@ instead."
      (mapcar 'buffer-file-name wiki-buffers)
      'close
      "org-glaux: automatic commit on close")
-    (mapc (lambda (b) (with-current-buffer b (kill-this-buffer))) wiki-buffers)
+    (mapc #'kill-buffer wiki-buffers)
     (message "org-glaux: all wiki files closed")))
 
 ;;;; Dired
@@ -729,6 +729,40 @@ Argument FORMAT format to export."
 			       (expand-file-name fpath)))
 		    wpath-list)
 	  (push page-path back-links))))))
+
+;;;; Internal -- Stats
+
+(defun org-glaux--show-wiki-stats ()
+  "Show current wiki statistics."
+  (interactive)
+  (let ((bname "*org-glaux stats*"))
+    (save-excursion
+      ;; clean old stats
+      (when (get-buffer bname)
+	(kill-buffer bname))
+      (switch-to-buffer bname)
+      (org-mode)
+      (let ((wlbp (org-glaux--get-all-wiki-links-by-page)))
+	(org-insert-heading)
+	(insert "Pages stats\n")
+	(insert (format "  - Pages count: %d" (length wlbp)))
+	(org-insert-heading)
+	(insert "Links stats\n")
+	(insert (format "  - average number of links by page: %.2f\n" (org-glaux--get-avg-links-per-page wlbp)))))))
+
+(defun org-glaux--get-avg-links-per-page (&optional wlbp links-count pages-count)
+  "Compute the average number of links by page.
+
+WLBP (wiki links by page), LINKS-COUNT and PAGES-COUNT are recomputed
+when needed."
+  (let* ((wlbp (or wlbp (org-glaux--get-all-wiki-links-by-page)))
+	 (links-count (or links-count
+			 (apply #'+ (mapcar
+				     (lambda (entry)
+				       (length (remove-duplicates (cdr entry))))
+				     wlbp))))
+	 (pages-count (or pages-count (length wlbp))))
+    (/ (float links-count) pages-count)))
 
 ;;;; Internal -- List
 (defun org-glaux--assets-page-files (dirpath)
