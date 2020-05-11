@@ -674,7 +674,8 @@ come back to it.
     ;; register & commit into vcs (if in follow mode)
     (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
     ;; save current buffer if it's customized so
-    (when org-glaux-save-on-follow
+    (when (and org-glaux-save-on-follow
+	     (org-glaux--is-buffer-in (current-buffer)))
       (save-buffer))
     (if (file-exists-p page-fpath)
 	;; if the page exists, open it
