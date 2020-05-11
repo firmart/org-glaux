@@ -2,11 +2,13 @@
 Glaux (/[[https://en.wiktionary.org/wiki/%CE%B3%CE%BB%CE%B1%E1%BF%A6%CE%BE#Ancient_Greek][γλαῦξ]]/) is a personal wiki using the wiseness of org-mode.
 
 ** Features
-- Support backward navigation (~org-glaux-navi-back~).
-- Support sub-directories.
-- Support dead wiki link highlighting.
-- Support edit history (with ~git~ + automatic commit).
-- and more...
+Support ...
+- backward navigation (~org-glaux-navi-back~)
+- sub-directories file hierarchy
+- dead wiki link highlighting
+- edit history (with ~git~ + automatic commit)
+- wiki statistics
+- And more...
 ** Installation
    
 Before this package get into MELPA, there are two alternatives to install
