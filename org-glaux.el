@@ -591,8 +591,9 @@ Note: This command requires Python3 installed."
   (org-glaux--vc-git-commit-files
    (directory-files-recursively org-glaux-location "^.*$")
    'manual
-   "org-glaux: manual commit relevant files of the full wiki."))
-
+   "org-glaux: manual commit relevant files of the full wiki.")
+  (save-excursion
+    (switch-to-buffer "*vc*")))
 
 ;;; Internal functions
 ;;;; Internal -- Download
@@ -713,13 +714,14 @@ Argument FORMAT format to export."
 	  (org-element-property :path link))))))
 
 (defun org-glaux--get-all-links-by-page (&optional link-type)
-  "Return an alist in which each entry has the form (PAGE-FPATH . LINK-TYPE list).
-LINK-TYPE default to wiki type."
+  "Return an alist (PAGE-FPATH . LINK-TYPE list).
+
+LINK-TYPE defaults to wiki type."
   (mapcar (lambda (f)
 	    (cons f (org-glaux--get-file-links f (or link-type "wiki"))))
 	  (org-glaux--page-files)))
 
-(defun org-glaux--get-page-back-links (fpath &option wlbp)
+(defun org-glaux--get-page-back-links (fpath &optional wlbp)
   "Return a list of page's file-path which has a wiki-link to FPATH.
 
 WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
@@ -749,41 +751,115 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
       (let* ((wlbp (org-glaux--get-all-links-by-page "wiki"))
 	     (wlcbp (org-glaux--get-links-count-by-page wlbp)))
 	(org-insert-heading)
+	;; Pages
 	(insert "Pages Stats\n")
 	(insert (format "  - Pages count: %d" (length wlbp)))
 	(org-insert-heading)
+	;; Wiki links
 	(insert "Wiki Links Stats\n")
 	(insert (format "  - Total links: %d\n" (apply '+ wlcbp)))
 	(insert (format "  - Links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
 			(seq-min wlcbp)
-			(org-glaux--get-median-links-per-page wlbp wlcbp)
-			(org-glaux--get-avg-links-per-page wlbp wlcbp)
-			(seq-max wlcbp)))))))
+			(org-glaux--get-median-links-by-page wlbp wlcbp)
+			(org-glaux--get-avg-links-by-page wlbp wlcbp)
+			(seq-max wlcbp)))
+	;; VCS
+	(condition-case nil
+	    (progn
+	      (org-glaux--vc-git-install-check)
+	      (org-insert-heading)
+	      (insert "VCS Stats\n")
+	      (let* ((ecbf (org-glaux--stats-git-edit-count-by-file))
+		     (ec (org-glaux--stats-git-edits-count ecbf)))
+		(insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
+				(seq-min ec)
+				(org-glaux--stats-git-avg-edit-count-by-file ec)
+				(org-glaux--stats-git-median-edit-count-by-file ec)
+				(seq-max ec)))
+		(insert (format "  - Top %d most edited pages\n" (if (> (length ec) 10) 10 (length ec))))
+		(mapc (lambda (entry)
+			(insert (format "    - %4d edit(s): ~%s~\n"
+					(cdr entry)
+					(file-relative-name (car entry) org-glaux-location))))
+		      (org-glaux--stats-git-top-edit-count-files 10 ecbf))))
+	  (org-glaux--vc-git-not-installed nil))))))
 
-(defun org-glaux--get-avg-links-per-page (lbp &optional links-count-by-page pages-count)
+;;;;; Internal -- Stats -- Edits Count
+
+(defun org-glaux--stats-git-edit-count-by-file ()
+  "Return (file . edit-count) alist."
+  (let ((rm-files (org-glaux--vc-git-get-removed-files)))
+    ;; Commit removed files
+    (when rm-files
+      (org-glaux--vc-git-register-removed-files)
+      (org-glaux--vc-git-commit "org-glaux: automatic commit removed file(s) before stats."))
+    (mapcar (lambda (f) (cons f (org-glaux--stats-git-file-edit-count f))) (org-glaux--vc-git-get-vc-files))))
+
+(defun org-glaux--stats-git-file-edit-count (fpath)
+  "Return git commit count of FPATH *in the working tree*.
+
+Known bug: filename containing special character fails this function.
+FIXME: replace them with unicode."
+  (let ((default-directory org-glaux-location))
+    (length (process-lines vc-git-program "log" "--oneline" fpath))))
+
+(defun org-glaux--stats-git-edits-count (ecbf)
+  "Given ECBF (edits-count by file), compute a list of edits count."
+  (mapcar #'cdr (org-glaux--stats-git-edit-count-by-file)))
+
+(defun org-glaux--stats-git-avg-edit-count-by-file (&optional edits-count ecbf)
+  "Compute the average of edits by file.
+
+EDITS-COUNT and ECBF (edits-count by file) are computed when needed."
+  (let ((edits-count (or edits-count
+			(org-glaux--stats-git-edits-count
+			 (or ecbf (org-glaux--stats-git-edit-count-by-file))))))
+    (/ (float (apply #'+ edits-count)) (length edits-count))))
+
+(defun org-glaux--stats-git-median-edit-count-by-file (&optional edits-count ecbf)
+  "Compute the median of edits by file.
+
+EDITS-COUNT and ECBF (edits-count by file) are computed when needed."
+  (let ((edits-count (or edits-count
+			(org-glaux--stats-git-edits-count
+			 (or ecbf (org-glaux--stats-git-edit-count-by-file))))))
+    (org-glaux--calc-median edits-count)))
+
+(defun org-glaux--stats-git-top-edit-count-files (n &optional ecbf)
+  "Return an alist (file-path . edits count) of the N most edits files.
+
+If N is nil, return all files in edits count order.
+ECBF (edits-count by file) is computed when needed."
+  (let* ((ecbf (or ecbf (org-glaux--stats-git-edit-count-by-file)))
+	 (len (length ecbf))
+	 (sorted (sort ecbf (lambda (a b) (> (cdr a) (cdr b))))))
+    (if n
+	(butlast sorted (- len n))
+      sorted)))
+
+;;;;; Internal -- Stats -- Links by page
+
+(defun org-glaux--get-avg-links-by-page (lbp &optional links-count pages-count)
   "Given LBP (links by page), compute the average number of links by page.
 
-LINKS-COUNT-BY-PAGE and PAGES-COUNT are computed when needed."
-  (let* ((links-count-by-page (or links-count-by-page (org-glaux--get-links-count-by-page lbp)))
+LINKS-COUNT and PAGES-COUNT are computed when needed."
+  (let* ((links-count (or links-count (org-glaux--get-links-count-by-page lbp)))
 	 (pages-count (or pages-count (length lbp))))
-    (/ (float (apply #'+ links-count-by-page)) pages-count)))
+    (/ (float (apply #'+ links-count)) pages-count)))
 
-(defun org-glaux--get-median-links-per-page (lbp &optional links-count-by-page)
+(defun org-glaux--get-median-links-by-page (lbp &optional links-count)
   "Given LBP (links by page), compute the median of links by page.
 
-LINKS-COUNT-BY-PAGE is computed when needed."
-  (let ((links-count-by-page (or links-count-by-page
-				(org-glaux--get-links-count-by-page lbp))))
-    (org-glaux--calc-median links-count-by-page)))
+LINKS-COUNT is computed when needed."
+  (let ((links-count (or links-count
+			(org-glaux--get-links-count lbp))))
+    (org-glaux--calc-median links-count)))
 
 (defun org-glaux--get-links-count-by-page (lbp)
-  "Given LBP (links by page), compute the number of links by page.
+  "Given LBP (page . links) alist, compute the number of links by page.
 
-Duplicated links are removed.
-"
-  (mapcar
-   (lambda (entry) (length (remove-duplicates (cdr entry))))
-   lbp))
+Duplicated links are removed."
+  (mapcar (lambda (entry) (length (remove-duplicates (cdr entry)))) lbp))
 
 ;;;; Internal -- Computation
 (defun org-glaux--calc-median (nlist)
@@ -935,10 +1011,11 @@ Argument FPATH: filepath."
 	  "."
 	  extension))
 
-(defun org-glaux--wiki-path-fpath (wiki-path buffer-fpath)
+(defun org-glaux--wiki-path-fpath (wiki-path &optional buffer-fpath)
   "Return filepath of given WIKI-PATH relative to BUFFER-FPATH.
 
-This function is designed for testing `org-glaux--cur-wiki-path-fpath'."
+This function is designed for testing `org-glaux--cur-wiki-path-fpath'.
+BUFFER-FPATH defaults to `org-glaux"
   (expand-file-name
    (concat
     (concat
@@ -1064,13 +1141,20 @@ See `org-glaux--vc-filter-files'."
 			;;(message "%s" fpath)
 			(or (unless org-glaux-vc-wiki-pages-only
 			     (equal (vc-git-state fpath) 'ignored))
-			   (equal (vc-git-state fpath) 'up-to-date)
+			   ;; removed file should be register by *-register-removed-files
+			   (member (vc-git-state fpath) '(up-to-date removed))
 			   (> (file-attribute-size
 			       (file-attributes fpath))
 			      org-glaux-vc-ignore-files-exceed-size)))
 		      potential-candidates)))
     (org-glaux--batch-execute-list 'vc-git-register 50 candidates)
     (length candidates)))
+
+(defun org-glaux--vc-git-register-removed-files ()
+  "Register files in removed stage under git VCS."
+  (interactive)
+  (let ((default-directory org-glaux-location))
+    (vc-git-command nil 0 (org-glaux--vc-git-get-removed-files) "update-index" "--remove" "--")))
 
 (defun org-glaux--vc-git-commit (&optional message)
   "Commit files into git with optional MESSAGE.
@@ -1088,16 +1172,38 @@ Should be called after `org-glaux--vc-git-register-files'"
 The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
 This function checks additionally possible errors."
   (when (and (equal org-glaux-vc-backend 'git)
-	   (or (equal 'manual context) ;; manual commit always accepted
-	      (equal org-glaux-vc-commit-when context)))
+	   ;; 'manual commit always accepted.
+	   (member context (list 'manual org-glaux-vc-commit-when)))
     (condition-case err
 	(progn
 	  (org-glaux--vc-git-install-check)
 	  (when (> (org-glaux--vc-git-register-files files) 0)
+	    ;; unconditionally remove removed files
+	    (org-glaux--vc-git-register-removed-files)
 	    (org-glaux--vc-git-commit message)
 	    (message "org-glaux: modified wiki files are committed into git")))
       (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
       (error (display-warning 'org-glaux (format "org-glaux: unable to register & commit files: %s" (error-message-string err)))))))
+
+(defun org-glaux--vc-git-get-removed-files ()
+  "Return files in removed state under git VCS."
+  (let ((default-directory org-glaux-location))
+    (cl-remove-if
+     #'null
+     (mapcar (lambda (f) (when (equal (vc-git-state f) 'removed) f))
+	     (org-glaux--vc-git-get-vc-files)))))
+
+(defun org-glaux--vc-git-get-vc-files ()
+  "Return all files in the working tree under git VCS."
+  (org-glaux--init-location)
+  (org-glaux--vc-git-install-check)
+  (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
+	  (let ((default-directory org-glaux-location))
+	    (process-lines vc-git-program
+			   "ls-tree"
+			   "-r"
+			   "master"
+			   "--name-only"))))
 
 ;;;; Internal -- Miscellaneous
 (defun org-glaux--batch-execute-list (f size data-list)
