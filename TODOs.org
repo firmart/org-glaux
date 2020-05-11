@@ -54,4 +54,9 @@
   - [ ] Use ~index~ as wiki settings file and ~index/~ as general assets directory
   - [X] Add test suites
   - [ ] Add Travis
+  - [ ] Add variant of automatic-commit
+    - [ ] ~close+follow~
+    - [ ] ~save~
+    - [ ] ~save+follow~
+
 
