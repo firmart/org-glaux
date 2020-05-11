@@ -98,7 +98,7 @@ You can toggle read-only mode with \\<read-only-mode>."
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
 
-(defcustom org-glaux-save-on-follow-p nil
+(defcustom org-glaux-save-on-follow nil
   "If \\[t], save current buffer before following a page link."
   :type 'boolean
   :group 'org-glaux
@@ -650,7 +650,8 @@ the URL).
 	  (error (format "`org-glaux-location-list' is nil or it contains non-existent directory '%s'" fst-loc)))
 	(setq org-glaux-location fst-loc))))
 
-;;;; Internal -- Wiki Link
+;;;; Internal -- Links
+;;;;; Wiki Links
 (defun org-glaux--make-link (wiki-path)
   "Return a string containing a wiki link [[wiki:WIKI-PATH][TITLE]].
 Argument WIKI-PATH: the link which is a wiki-path."
@@ -673,7 +674,7 @@ come back to it.
     ;; register & commit into vcs (if in follow mode)
     (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
     ;; save current buffer if it's customized so
-    (when (org-glaux-save-on-follow-p)
+    (when org-glaux-save-on-follow
       (save-buffer))
     (if (file-exists-p page-fpath)
 	;; if the page exists, open it
@@ -700,6 +701,31 @@ Argument FORMAT format to export."
 		   (file-relative-name
 		    (expand-file-name wiki-path org-glaux-location) ".")
 		   (or desc wiki-path)))))
+;;;;; Links Utilities
+;; TODO close file if it wasn't opened
+(defun org-glaux--get-file-links (fpath link-type)
+  (with-current-buffer (find-file-noselect fpath)
+    (org-element-map (org-element-parse-buffer) 'link
+      (lambda (link)
+	(when (string= (org-element-property :type link) link-type)
+	  (org-element-property :path link))))))
+
+(defun org-glaux--get-all-wiki-links-by-page ()
+  (mapcar (lambda (f) (cons f (org-glaux--get-file-links f "wiki"))) (org-glaux--page-files)))
+
+(defun org-glaux--get-page-back-links (fpath)
+  (let ((wlbp (org-glaux--get-all-wiki-links-by-page))
+	(back-links))
+    (dolist (entry wlbp back-links)
+      (let ((page-path (car entry))
+	    (wpath-list (cdr entry)))
+	(message "%s" entry)
+	(when (some (lambda (wpath)
+		      (message "%s vs %s" (org-glaux--wiki-path-fpath wpath page-path) (expand-file-name fpath))
+		      (string= (org-glaux--wiki-path-fpath wpath page-path)
+			       (expand-file-name fpath)))
+		    wpath-list)
+	  (push page-path back-links))))))
 
 ;;;; Internal -- List
 (defun org-glaux--assets-page-files (dirpath)
@@ -806,7 +832,7 @@ Argument FORMAT format to export."
 Argument FPATH: filepath.
 Optional argument PROPERTY: the property seeking."
   (let* ((bp (get-file-buffer fpath))
-	 (buffer (find-file fpath)))
+	 (buffer (find-file-noselect fpath)))
     (unless property (setq property "PROPERTY"))
     (with-current-buffer (or buffer (current-buffer))
       (let ((value (org-element-map (org-element-parse-buffer)
@@ -1030,10 +1056,10 @@ This function checks additionally possible errors."
 
 ;;;; Http link
 ;; (org-link-set-parameters "http"
-;;  			 :face #'org-glaux--url-face)
+;;   			 :face #'org-glaux--url-face)
 ;; 
 ;; (org-link-set-parameters "https"
-;;  			 :face #'org-glaux--url-face)
+;;   			 :face #'org-glaux--url-face)
 
 (provide 'org-glaux)
 ;;; org-glaux.el ends here
