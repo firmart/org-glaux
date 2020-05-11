@@ -27,7 +27,20 @@
   - [ ] Consider ~org-attach~ before implementing download-related function.
   - [X] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
   - [ ] In all interactive functions: check if current buffer is under an org-glaux dir
-  - [ ] Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
+  - [-] Add a function which display statistics of the wiki (e.g. counting empty files, big files, dead links number etc.)
+    - [-] Be inspired by [[https://en.wikipedia.org/wiki/Wikipedia:Statistics][Wikipedia statistics]]
+      - [ ] Graph stats
+	- [ ] Density (link + backlink)
+      - [-] Links stats
+	- [X] avg
+	- [ ] median
+	- [ ] min, max
+      - [ ] Backlinks stats
+	- [ ] show limited number of orphan pages (0 back links)
+      - [X] Pages stats
+	- [X] pages count
+      - [ ] Edit stats
+	- [ ] Frequently edited pages
     - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html][progress bar]] for time-consuming task
   - [ ] Provide lint function listing all break link and suggesting quick fix Ref. [[https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks][correcting-and-maintaining-org-mode-hyperlinks]] 
   - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
