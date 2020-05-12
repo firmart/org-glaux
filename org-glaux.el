@@ -770,18 +770,20 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 	      (org-insert-heading)
 	      (insert "VCS Stats\n")
 	      (let* ((ecbf (org-glaux--stats-git-edit-count-by-file))
-		     (ec (org-glaux--stats-git-edits-count ecbf)))
+		     (ec (org-glaux--stats-git-edits-count ecbf))
+		     (show-ec (if (> (length ec) 10) 10 (length ec))))
+		(message "%s" ec)
 		(insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
 				(seq-min ec)
 				(org-glaux--stats-git-avg-edit-count-by-file ec)
 				(org-glaux--stats-git-median-edit-count-by-file ec)
 				(seq-max ec)))
-		(insert (format "  - Top %d most edited pages\n" (if (> (length ec) 10) 10 (length ec))))
+		(insert (format "  - Top %d most edited pages\n" show-ec))
 		(mapc (lambda (entry)
 			(insert (format "    - %4d edit(s): ~%s~\n"
 					(cdr entry)
 					(file-relative-name (car entry) org-glaux-location))))
-		      (org-glaux--stats-git-top-edit-count-files 10 ecbf))))
+		      (org-glaux--stats-git-top-edit-count-files show-ec ecbf))))
 	  (org-glaux--vc-git-not-installed nil))))))
 
 ;;;;; Internal -- Stats -- Edits Count
@@ -1199,11 +1201,13 @@ Should be called after `org-glaux--vc-git-register-files'"
   (org-glaux--init-location)
   (org-glaux--vc-git-install-check)
   (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
-	  (let ((default-directory org-glaux-location))
+	  (let* ((default-directory org-glaux-location)
+		 (git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
+	    (message "%s" git-cur-branch)
 	    (process-lines vc-git-program
 			   "ls-tree"
 			   "-r"
-			   "master"
+			   git-cur-branch
 			   "--name-only"))))
 
 ;;;; Internal -- Miscellaneous
