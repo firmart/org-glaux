@@ -623,25 +623,26 @@ the URL).
     (funcall callback output-file)))
 
 ;;;; Internal -- Initialization
-(defun org-glaux--insert-header ()
-  "Insert a header at the top of the file."
+(defun org-glaux--insert-header (&optional title date)
+  "Insert a header at the top of the buffer.
+
+Optional arguments TITLE and DATE."
   ;; Save current cursor location and restore it
   ;; after completion of block insider save-excursion.
-  (save-excursion
-    (let*
-	;; replace '%n' by page title
-	((text1 (replace-regexp-in-string
-		 "%n"
-		 (file-name-base buffer-file-name)
-		 org-glaux-template))
-	 ;; Replace %d by current date in the format %Y-%m-%d
-	 (text2 (replace-regexp-in-string
-		 "%d"
-		 (format-time-string "%Y-%m-%d")
-		 text1)))
-      ;; Got to top of file
-      (goto-char (point-min))
-      (insert text2))))
+  (let*
+      ;; replace '%n' by page title
+      ((text1 (replace-regexp-in-string
+	       "%n"
+	       (or title (file-name-base buffer-file-name))
+	       org-glaux-template))
+       ;; Replace %d by current date in the format %Y-%m-%d
+       (text2 (replace-regexp-in-string
+	       "%d"
+	       (or date (format-time-string "%Y-%m-%d"))
+	       text1)))
+    ;; Got to top of file
+    (goto-char (point-min))
+    (insert text2)))
 
 (defun org-glaux--init-location ()
   "Initialize `org-glaux-location' variable if not set yet."
@@ -705,21 +706,27 @@ Argument FORMAT format to export."
 		   (or desc wiki-path)))))
 ;;;;; Links Utilities
 ;; TODO close file if it wasn't opened
-(defun org-glaux--get-file-links (fpath link-type)
+(defun org-glaux--get-file-links (fpath &rest link-type)
   "Return all links of type LINK-TYPE appearing in file FPATH."
   (with-current-buffer (find-file-noselect fpath)
     (org-element-map (org-element-parse-buffer) 'link
       (lambda (link)
-	(when (string= (org-element-property :type link) link-type)
+	(when (member (org-element-property :type link) link-type)
 	  (org-element-property :path link))))))
 
-(defun org-glaux--get-all-links-by-page (&optional link-type)
-  "Return an alist (PAGE-FPATH . LINK-TYPE list).
-
-LINK-TYPE defaults to wiki type."
+(defun org-glaux--get-all-links-by-page (&rest link-type)
+  "Return an alist (PAGE-FPATH . LINK-TYPE list)."
   (mapcar (lambda (f)
-	    (cons f (org-glaux--get-file-links f (or link-type "wiki"))))
+	    (cons f (apply #'org-glaux--get-file-links f link-type)))
 	  (org-glaux--page-files)))
+
+;;;###autoload
+(defun org-glaux--get-all-links-count-by-page (&rest link-type)
+  "Return a list of links count of type LINK-TYPE."
+  (mapcar (lambda (f)
+	    (length (apply #'org-glaux--get-file-links f link-type)))
+	  (org-glaux--page-files)))
+
 
 (defun org-glaux--get-page-back-links (fpath &optional wlbp)
   "Return a list of page's file-path which has a wiki-link to FPATH.
@@ -738,6 +745,7 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 
 ;;;; Internal -- Stats
 
+;;;###autoload
 (defun org-glaux--show-wiki-stats ()
   "Show current wiki statistics."
   (interactive)
@@ -748,43 +756,55 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 	(kill-buffer bname))
       (switch-to-buffer bname)
       (org-mode)
-      (let* ((wlbp (org-glaux--get-all-links-by-page "wiki"))
-	     (wlcbp (org-glaux--get-links-count-by-page wlbp)))
+      (org-glaux--insert-header "Wiki statistics")
+      (let* ((wlcbp (org-glaux--get-all-links-count-by-page "wiki")))
 	(org-insert-heading)
 	;; Pages
 	(insert "Pages Stats\n")
-	(insert (format "  - Pages count: %d" (length wlbp)))
+	(insert (format "  - Pages count: %d" (length wlcbp)))
 	(org-insert-heading)
+	(insert "Links Stats\n")
 	;; Wiki links
-	(insert "Wiki Links Stats\n")
-	(insert (format "  - Total links: %d\n" (apply '+ wlcbp)))
-	(insert (format "  - Links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
+	(org-insert-subheading nil)
+	(insert "Internal Links Stats\n")
+	(insert (format "  - Total wiki links: %d\n" (apply '+ wlcbp)))
+	(insert (format "  - Wiki links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
 			(seq-min wlcbp)
-			(org-glaux--get-median-links-by-page wlbp wlcbp)
-			(org-glaux--get-avg-links-by-page wlbp wlcbp)
-			(seq-max wlcbp)))
-	;; VCS
-	(condition-case nil
-	    (progn
-	      (org-glaux--vc-git-install-check)
-	      (org-insert-heading)
-	      (insert "VCS Stats\n")
-	      (let* ((ecbf (org-glaux--stats-git-edit-count-by-file))
-		     (ec (org-glaux--stats-git-edits-count ecbf))
-		     (show-ec (if (> (length ec) 10) 10 (length ec))))
-		(message "%s" ec)
-		(insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
-				(seq-min ec)
-				(org-glaux--stats-git-avg-edit-count-by-file ec)
-				(org-glaux--stats-git-median-edit-count-by-file ec)
-				(seq-max ec)))
-		(insert (format "  - Top %d most edited pages\n" show-ec))
-		(mapc (lambda (entry)
-			(insert (format "    - %4d edit(s): ~%s~\n"
-					(cdr entry)
-					(file-relative-name (car entry) org-glaux-location))))
-		      (org-glaux--stats-git-top-edit-count-files show-ec ecbf))))
-	  (org-glaux--vc-git-not-installed nil))))))
+			(org-glaux--get-median-links-by-page nil wlcbp)
+			(org-glaux--get-avg-links-by-page nil wlcbp)
+			(seq-max wlcbp))))
+      (let* ((url-lcbp  (org-glaux--get-all-links-count-by-page "https" "http")))
+	;; External links
+	(org-insert-heading)
+	(insert "External Links Stats\n")
+	(insert (format "  - Total url: %d\n" (apply '+ url-lcbp)))
+	(insert (format "  - Url(s) by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
+			(seq-min url-lcbp)
+			(org-glaux--get-median-links-by-page nil url-lcbp)
+			(org-glaux--get-avg-links-by-page nil url-lcbp)
+			(seq-max url-lcbp))))
+      ;; VCS
+      (condition-case nil
+	  (progn
+	    (org-glaux--vc-git-install-check)
+	    (org-insert-heading)
+	    (org-do-promote) ;; promote to level 1
+	    (insert "VCS Stats\n")
+	    (let* ((ecbf (org-glaux--stats-git-edit-count-by-file))
+		   (ec (org-glaux--stats-git-edits-count ecbf))
+		   (show-ec (if (> (length ec) 10) 10 (length ec))))
+	      (insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
+			      (seq-min ec)
+			      (org-glaux--stats-git-avg-edit-count-by-file ec)
+			      (org-glaux--stats-git-median-edit-count-by-file ec)
+			      (seq-max ec)))
+	      (insert (format "  - Top %d most edited pages\n" show-ec))
+	      (mapc (lambda (entry)
+		      (insert (format "    - %4d edit(s): ~%s~\n"
+				      (cdr entry)
+				      (file-relative-name (car entry) org-glaux-location))))
+		    (org-glaux--stats-git-top-edit-count-files show-ec ecbf))))
+	(org-glaux--vc-git-not-installed nil)))))
 
 ;;;;; Internal -- Stats -- Edits Count
 
@@ -846,7 +866,7 @@ ECBF (edits-count by file) is computed when needed."
 
 LINKS-COUNT and PAGES-COUNT are computed when needed."
   (let* ((links-count (or links-count (org-glaux--get-links-count-by-page lbp)))
-	 (pages-count (or pages-count (length lbp))))
+	 (pages-count (or pages-count (length links-count))))
     (/ (float (apply #'+ links-count)) pages-count)))
 
 (defun org-glaux--get-median-links-by-page (lbp &optional links-count)
@@ -854,14 +874,17 @@ LINKS-COUNT and PAGES-COUNT are computed when needed."
 
 LINKS-COUNT is computed when needed."
   (let ((links-count (or links-count
-			(org-glaux--get-links-count lbp))))
+			(org-glaux--get-links-count-by-page lbp))))
     (org-glaux--calc-median links-count)))
 
-(defun org-glaux--get-links-count-by-page (lbp)
+(defun org-glaux--get-links-count-by-page (lbp &optional rmdup)
   "Given LBP (page . links) alist, compute the number of links by page.
 
-Duplicated links are removed."
-  (mapcar (lambda (entry) (length (remove-duplicates (cdr entry)))) lbp))
+Duplicated links are removed if RMDUP is non-nil."
+  (mapcar (lambda (entry) (length (if rmdup 
+				 (remove-duplicates (cdr entry))
+			       (cdr entry))))
+	  lbp))
 
 ;;;; Internal -- Computation
 (defun org-glaux--calc-median (nlist)
@@ -1203,7 +1226,6 @@ Should be called after `org-glaux--vc-git-register-files'"
   (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
 	  (let* ((default-directory org-glaux-location)
 		 (git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
-	    (message "%s" git-cur-branch)
 	    (process-lines vc-git-program
 			   "ls-tree"
 			   "-r"
