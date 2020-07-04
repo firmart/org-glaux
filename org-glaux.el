@@ -79,10 +79,9 @@ You can toggle read-only mode with \\<read-only-mode>."
 #+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
 #+TITLE: %n
 #+DESCRIPTION:
-#+KEYWORDS:
+#+TAGS:
 #+STARTUP:  overview
 #+DATE: %d
-#+BIBLIOGRAPHY: main plain
 ")
   "Default template used to create org-glaux pages/files.
 - %n - is replaced by the page name.
@@ -241,7 +240,10 @@ instead."
   (interactive)
   ;; register all opened files to version control
   (let ((wiki-buffers
-	 (cl-remove-if-not 'org-glaux--is-buffer-in (buffer-list))))
+	 (cl-remove-if-not
+	  (lambda (b) (and (org-glaux--is-buffer-in b)
+		    (string-suffix-p ".org" (buffer-file-name b))))
+	  (buffer-list))))
     (mapc (lambda (b) (with-current-buffer b (save-buffer))) wiki-buffers)
     ;; register and commit
     (org-glaux--vc-git-commit-files
@@ -362,9 +364,7 @@ The link type file is opened with Emacs."
        (format "file:%s/%s"
 	       (file-name-base buffer-file-name)
 	       (file-name-nondirectory file))
-       (read-string "Description: "
-		    (file-name-nondirectory file)))
-      (file-name-nondirectory file)))))
+       (read-string "Description: "))))))
 
 ;;;###autoload
 (defun org-glaux-insert-download ()
@@ -379,8 +379,10 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-insert-new-link ()
   "Create a new wiki page and insert a link to it at point."
   (interactive)
-  (let ((page-name (read-string  "Page wiki-link: ")))
-    (save-excursion (insert (org-link-make-string (concat "wiki:" page-name) page-name)))))
+  (let ((page-name (read-string  "Page wiki-link: "))
+	(desc (read-string "Description: ")))
+    (save-excursion
+      (insert (org-link-make-string (concat "wiki:" page-name) desc)))))
 
 ;;;###autoload
 (defun org-glaux-insert-select-link ()
@@ -424,7 +426,7 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-new-page ()
   "Create a new wiki page and open it without inserting a link."
   (interactive)
-  (org-glaux--wiki-follow (read-string "Page Name: ")))
+  (org-glaux--wiki-follow (read-string "New page path: ")))
 
 ;;;###autoload
 (defun org-glaux-website ()
