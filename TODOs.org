@@ -60,5 +60,12 @@
     - [ ] ~close+follow~
     - [ ] ~save~
     - [ ] ~save+follow~
+  - [ ] Org file option preventing export
+    - current page + asset
+    - lower hierarchically page and assets
+  - [ ] (Back)-navigation  
+    - add a hook for switch-buffer function (store eligible page to navigation
+      history). switch-buffer variable defaults to `switch-buffer`, can be
+      customized to something like `ivy-switch-buffer`.
 
 
