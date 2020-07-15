@@ -449,7 +449,7 @@ Note: This function is synchronous and blocks Emacs."
       (unless prev-page
 	(org-glaux--init-location)
 	(setq prev-page (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename))))
-    (org-glaux--wiki-follow (org-glaux--file-wiki-path prev-page))))
+    (org-glaux--wiki-follow (org-glaux--file-wiki-path prev-page) t)))
 
 ;;;; Search
 
@@ -663,7 +663,7 @@ Argument WIKI-PATH: the link which is a wiki-path."
 	  wiki-path
 	  (org-glaux--global-prop-value (org-glaux--cur-wiki-path-fpath wiki-path) "TITLE")))
 
-(defun org-glaux--wiki-follow (wiki-path)
+(defun org-glaux--wiki-follow (wiki-path &optional no-history-p)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
 
 - It pushes current wiki buffer into history so that `org-glaux-navi-back' can
@@ -673,7 +673,8 @@ come back to it.
 	(dest-buffer)
 	(cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
-    (when (org-glaux--is-buffer-in (current-buffer))
+    (when (and (org-glaux--is-buffer-in (current-buffer))
+	     (not no-history-p))
       (push cur-buf-fpath org-glaux--page-history))
     ;; register & commit into vcs (if in follow mode)
     (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")

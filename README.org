@@ -65,7 +65,9 @@ configuration can be found below.
   |---------------------------+----------------------------------------------------------|
 
 ** Wishlist
- - Support showing page description on point
+ - Support showing page description on point with (tooltip)
  - Support image gallery
+ - Support link archiving (archive link with wayback machine; access archived
+   link if it's a dead link)
 ** Credits
 ~org-glaux~ is based upon [[https://github.com/caiorss/org-wiki/issues][org-wiki]] of Caio Rodrigues.
