@@ -213,8 +213,11 @@ instead."
     (if (not (file-exists-p org-glaux-backup-location))
         (make-directory org-glaux-backup-location t))
 
-    (if (file-exists-p destfile) (delete-file destfile))
-    (if (file-exists-p zipfile)  (delete-file zipfile))
+    (when (file-exists-p destfile)
+      (delete-file destfile))
+
+    (when (file-exists-p zipfile)
+      (delete-file zipfile))
 
     ;; Clear buffer removing all lines
     (delete-region (point-min) (point-max))
@@ -224,14 +227,14 @@ instead."
       "*org-glaux-backup*" ;; Buffer where output is displayed.
       ;; Shell command
       "zip" "-r" "-9" zipfile ".")
-     (lexical-let ((zipfile  zipfile)
-                   (destfile destfile))
-       (lambda (process)
-         (when (equal (process-exit-status process) 0)
-           (switch-to-buffer "*org-glaux-backup*")
-           (rename-file zipfile org-glaux-backup-location t)
-           (message "org-glaux: backup done")
-           (insert  "\nBackup done.  Run M-x org-glaux-backup-dir to open backup directory.")))))))
+     (lambda (process desc)
+       (if (equal (process-exit-status process) 0)
+	   (progn
+	     (switch-to-buffer "*org-glaux-backup*")
+	     (rename-file zipfile org-glaux-backup-location t)
+	     (message "org-glaux: backup done")
+	     (insert  "\nBackup done."))
+	 (message "%s" desc))))))
 
 ;;;; Close
 ;;;###autoload
@@ -390,7 +393,10 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (org-glaux--select
    (lambda (wiki-path)
-     (insert (org-glaux--make-link wiki-path)))))
+     (insert
+      (org-glaux--make-link wiki-path
+			    (read-string
+			     "Optional description (default: page's title): "))))))
 
 ;;;; Miscellaneous
 
@@ -656,12 +662,15 @@ Optional arguments TITLE and DATE."
 
 ;;;; Internal -- Links
 ;;;;; Wiki Links
-(defun org-glaux--make-link (wiki-path)
+(defun org-glaux--make-link (wiki-path &optional desc)
   "Return a string containing a wiki link [[wiki:WIKI-PATH][TITLE]].
-Argument WIKI-PATH: the link which is a wiki-path."
-  (format "[[wiki:%s][%s]]"
-	  wiki-path
-	  (org-glaux--global-prop-value (org-glaux--cur-wiki-path-fpath wiki-path) "TITLE")))
+Argument WIKI-PATH: the link which is a wiki-path.
+Argument DESC: the link description."
+  (org-link-make-string 
+   (concat "wiki:" wiki-path)
+   (if (or (string-empty-p desc) (not desc)) ;; if desc is an empty string or nil
+       (org-glaux--global-prop-value (org-glaux--cur-wiki-path-fpath wiki-path) "TITLE")
+     desc)))
 
 (defun org-glaux--wiki-follow (wiki-path &optional no-history-p)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
@@ -752,7 +761,8 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 (defun org-glaux--show-wiki-stats ()
   "Show current wiki statistics."
   (interactive)
-  (let ((bname "*org-glaux stats*"))
+  (let ((bname "*org-glaux stats*")
+	(progress-reporter (make-progress-reporter "Computing wiki statistics..." 0 20)))
     (save-excursion
       ;; clean old stats
       (when (get-buffer bname)
@@ -760,7 +770,8 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
       (switch-to-buffer bname)
       (org-mode)
       (org-glaux--insert-header "Wiki statistics")
-      (let* ((wlcbp (org-glaux--get-all-links-count-by-page "wiki")))
+      (let* ((wlcbp (progn (progress-reporter-update progress-reporter 1)
+			   (org-glaux--get-all-links-count-by-page "wiki"))))
 	(org-insert-heading)
 	;; Pages
 	(insert "Pages Stats\n")
@@ -770,44 +781,58 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 	;; Wiki links
 	(org-insert-subheading nil)
 	(insert "Internal Links Stats\n")
-	(insert (format "  - Total wiki links: %d\n" (apply '+ wlcbp)))
+	(insert (format "  - Total wiki links: %d\n" (progn (progress-reporter-update progress-reporter 2)
+							    (apply '+ wlcbp))))
 	(insert (format "  - Wiki links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
-			(seq-min wlcbp)
-			(org-glaux--get-median-links-by-page nil wlcbp)
-			(org-glaux--get-avg-links-by-page nil wlcbp)
-			(seq-max wlcbp))))
-      (let* ((url-lcbp  (org-glaux--get-all-links-count-by-page "https" "http")))
+			(progn (progress-reporter-update progress-reporter 3)
+			       (seq-min wlcbp))
+			(progn (progress-reporter-update progress-reporter 4)
+			       (org-glaux--get-median-links-by-page nil wlcbp))
+			(progn (progress-reporter-update progress-reporter 5)
+			       (org-glaux--get-avg-links-by-page nil wlcbp))
+			(progn (progress-reporter-update progress-reporter 6)
+			       (seq-max wlcbp)))))
+      (let* ((url-lcbp  (progn (progress-reporter-update progress-reporter 7)
+			       (org-glaux--get-all-links-count-by-page "https" "http"))))
 	;; External links
 	(org-insert-heading)
 	(insert "External Links Stats\n")
-	(insert (format "  - Total url: %d\n" (apply '+ url-lcbp)))
+	(insert (format "  - Total url: %d\n" (progn (progress-reporter-update progress-reporter 8)
+						     (apply '+ url-lcbp))))
 	(insert (format "  - Url(s) by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
-			(seq-min url-lcbp)
-			(org-glaux--get-median-links-by-page nil url-lcbp)
-			(org-glaux--get-avg-links-by-page nil url-lcbp)
-			(seq-max url-lcbp))))
+			(progn (progress-reporter-update progress-reporter 9)
+			       (seq-min url-lcbp))
+			(progn (progress-reporter-update progress-reporter 10)
+			       (org-glaux--get-median-links-by-page nil url-lcbp))
+			(progn (progress-reporter-update progress-reporter 11)
+			       (org-glaux--get-avg-links-by-page nil url-lcbp))
+			(progn (progress-reporter-update progress-reporter 12)
+			       (seq-max url-lcbp)))))
       ;; VCS
       (condition-case nil
 	  (progn
 	    (org-glaux--vc-git-install-check)
+	    (progress-reporter-update progress-reporter 13)
 	    (org-insert-heading)
 	    (org-do-promote) ;; promote to level 1
 	    (insert "VCS Stats\n")
-	    (let* ((ecbf (org-glaux--stats-git-edit-count-by-file))
-		   (ec (org-glaux--stats-git-edits-count ecbf))
+	    (let* ((ecbf (progn (progress-reporter-update progress-reporter 14) (org-glaux--stats-git-edit-count-by-file)))
+		   (ec (progn (progress-reporter-update progress-reporter 15) (org-glaux--stats-git-edits-count ecbf)))
 		   (show-ec (if (> (length ec) 10) 10 (length ec))))
 	      (insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
-			      (seq-min ec)
-			      (org-glaux--stats-git-avg-edit-count-by-file ec)
-			      (org-glaux--stats-git-median-edit-count-by-file ec)
-			      (seq-max ec)))
+			      (progn (progress-reporter-update progress-reporter 16) (seq-min ec))
+			      (progn (progress-reporter-update progress-reporter 17) (org-glaux--stats-git-avg-edit-count-by-file ec))
+			      (progn (progress-reporter-update progress-reporter 18) (org-glaux--stats-git-median-edit-count-by-file ec))
+			      (progn (progress-reporter-update progress-reporter 19) (seq-max ec))))
 	      (insert (format "  - Top %d most edited pages\n" show-ec))
 	      (mapc (lambda (entry)
 		      (insert (format "    - %4d edit(s): ~%s~\n"
 				      (cdr entry)
 				      (file-relative-name (car entry) org-glaux-location))))
-		    (org-glaux--stats-git-top-edit-count-files show-ec ecbf))))
-	(org-glaux--vc-git-not-installed nil)))))
+		    (org-glaux--stats-git-top-edit-count-files show-ec ecbf)))
+	    (progress-reporter-update progress-reporter 20))
+	(org-glaux--vc-git-not-installed nil))
+      (progress-reporter-done progress-reporter))))
 
 ;;;;; Internal -- Stats -- Edits Count
 
