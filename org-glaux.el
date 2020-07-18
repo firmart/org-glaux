@@ -151,7 +151,12 @@ instead."
 (defcustom org-glaux-vc-commit-when 'close
   "Indicate when files are registered in version control and committed."
   :type '(radio (const :tag "commit opened wiki buffers when `org-glaux-close-pages' is called" :value 'close)
-		(const :tag "commit when follow a wiki page" :value 'follow)
+		(const :tag "commit when a page is saved (not yet available)" :value 'save)
+		(const :tag "commit current wiki buffer when a wiki link is followed" :value 'follow)
+		(const :tag "same as 'close or 'follow" :value 'close+follow)
+		(const :tag "same as 'save or 'follow" :value 'follow+save)
+		(const :tag "same as 'close or 'save" :value 'close+save)
+		(const :tag "same as 'close or 'follow or 'save" :value 'close+follow+save)
 		(const :tag "always commit manually" :value 'manual))
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
@@ -204,8 +209,8 @@ instead."
 (defun org-glaux-backup ()
   "Make a org-glaux backup."
   (interactive)
-  (let* ((zipfile            (concat "org-glaux-" (format-time-string "%Y-%m-%d") ".zip"))
-         (destfile           (concat (file-name-directory org-glaux-backup-location) zipfile))
+  (let* ((zipfile  (concat "org-glaux-" (format-time-string "%Y-%m-%d") ".zip"))
+         (destfile (concat (file-name-directory org-glaux-backup-location) zipfile))
          (default-directory  org-glaux-location))
     (switch-to-buffer "*org-glaux-backup*")
 
@@ -225,8 +230,7 @@ instead."
      (start-process
       "org-glaux-backup" ;; Process name
       "*org-glaux-backup*" ;; Buffer where output is displayed.
-      ;; Shell command
-      "zip" "-r" "-9" zipfile ".")
+      "zip" "-r" "-9" zipfile ".") ;; Shell command
      (lambda (process desc)
        (if (equal (process-exit-status process) 0)
 	   (progn
@@ -385,7 +389,8 @@ Note: This function is synchronous and blocks Emacs."
   (let ((page-name (read-string  "Page wiki-link: "))
 	(desc (read-string "Description: ")))
     (save-excursion
-      (insert (org-link-make-string (concat "wiki:" page-name) desc)))))
+      (insert (org-link-make-string (concat "wiki:" page-name)
+				    (if (string-empty-p desc) page-name desc))))))
 
 ;;;###autoload
 (defun org-glaux-insert-select-link ()
@@ -537,6 +542,8 @@ The html page is created if it doesn't exist yet."
 	       (message (format "Org-glaux pages under directory %s are saved" org-glaux-location)))
 	     (setq org-glaux--page-history nil) ;; clean history of the previous wiki
 	     (setq org-glaux-location p)
+	     (when (not (file-exists-p org-glaux-location))
+	       (make-directory org-glaux-location t))
 	     (org-glaux-index)
 	     (message (format "Org-glaux root directory set to: %s" p))))))
     (funcall action target)))
@@ -595,7 +602,6 @@ Note: This command requires Python3 installed."
 (defun org-glaux-vc-git-full-commit ()
   "Register and commit all relevant files of the full wiki."
   (interactive)
-  (org-glaux-vc-git-init-root)
   (org-glaux--vc-git-commit-files
    (directory-files-recursively org-glaux-location "^.*$")
    'manual
@@ -1220,45 +1226,64 @@ Should be called after `org-glaux--vc-git-register-files'"
 		    (or message "org-glaux: automatic commit."))))
 
 (defun org-glaux--vc-git-commit-files (files context &optional message)
-  "Register and commit FILES depending the CONTEXT with optional MESSAGE.
+  "Register and commit FILES with optional MESSAGE depending the CONTEXT.
 
 - The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
 - This function checks additionally possible errors."
   (when (and (equal org-glaux-vc-backend 'git)
-	   ;; 'manual commit always accepted.
-	   (member context (list 'manual org-glaux-vc-commit-when)))
+	   ;; 'manual commit is always accepted
+	   (or (member context (list 'manual org-glaux-vc-commit-when))
+	      (when (equal org-glaux-vc-commit-when 'close+follow)
+		(member context '(close follow)))
+	      (when (equal org-glaux-vc-commit-when 'follow+save)
+		(member context '(follow save)))
+	      (when (equal org-glaux-vc-commit-when 'close+save)
+		(member context '(close save)))
+	      (when (equal org-glaux-vc-commit-when 'close+follow+save)
+		(member context '(close follow save)))))
     (condition-case err
 	(progn
 	  (org-glaux--vc-git-install-check)
+	  (org-glaux-vc-git-init-root)
 	  (let ((register-count (org-glaux--vc-git-register-files files)))
 	    (when (> register-count 0)
 	      ;; unconditionally remove removed files
 	      (org-glaux--vc-git-register-removed-files)
 	      (org-glaux--vc-git-commit message)
-	      (message "org-glaux: modified wiki files are committed into git"))))
+	      (message "%s" message))))
       (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
-      (error (display-warning 'org-glaux (format "org-glaux: unable to register & commit files: %s" (error-message-string err)))))))
+      (error (display-warning 'org-glaux
+			      (format "org-glaux: unable to register & commit files in the context %s : %s"
+				      (symbol-name context)
+				      (error-message-string err)))))))
+
+(defun org-glaux--vc-git-commit-on-save ()
+  "Commit change into git on save."
+  (when (and (member org-glaux-vc-commit-when '(save close+save follow+save close+follow+save))
+	   (org-glaux--is-buffer-in (current-buffer)))
+    (org-glaux--vc-git-commit-files
+     (list buffer-file-name)
+     'save
+     "org-glaux: automatic commit on page save"))) 
+
+(add-hook 'after-save-hook 'org-glaux--vc-git-commit-on-save)
 
 (defun org-glaux--vc-git-get-removed-files ()
   "Return files in removed state under git VCS."
-  (let ((default-directory org-glaux-location))
-    (cl-remove-if
-     #'null
-     (mapcar (lambda (f) (when (equal (vc-git-state f) 'removed) f))
-	     (org-glaux--vc-git-get-vc-files)))))
+  (cl-remove-if
+   #'null
+   (mapcar (lambda (f) (when (equal (vc-git-state f) 'removed) f))
+	   (org-glaux--vc-git-get-vc-files))))
 
 (defun org-glaux--vc-git-get-vc-files ()
-  "Return all files in the working tree under git VCS."
-  (org-glaux--init-location)
-  (org-glaux--vc-git-install-check)
-  (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
-	  (let* ((default-directory org-glaux-location)
-		 (git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
-	    (process-lines vc-git-program
-			   "ls-tree"
-			   "-r"
-			   git-cur-branch
-			   "--name-only"))))
+"Return all files in the working tree under git VCS."
+(let ((default-directory org-glaux-location))
+  ;; If there is no yet any commit, commands below will fail
+  ;; First check if it's the case or not with git branch -a
+  (when (process-lines vc-git-program "branch" "-a") 
+    (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
+	    (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
+	      (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
 
 ;;;; Internal -- Miscellaneous
 (defun org-glaux--batch-execute-list (f size data-list)
