@@ -9,7 +9,7 @@
 ** TODO Wishlists
    - Support showing page description on point ([[https://emacs.stackexchange.com/questions/26674/tooltip-on-inline-images-in-org-mode][tooltip on inline images in org-mode]])
    - Support image gallery
-** TODO TODO tasks [12%]
+** TODO TODO tasks [11%]
    
   - [X] Documentation [1/1]
     - [X] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
@@ -41,7 +41,7 @@
 	- [X] pages count
       - [X] Edit stats
 	- [X] Frequently edited pages
-    - [ ] add [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html][progress bar]] for time-consuming task
+    - [X] add [[https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html][progress bar]] for time-consuming task
   - [ ] Provide lint function listing all break link and suggesting quick fix Ref. [[https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks][correcting-and-maintaining-org-mode-hyperlinks]] 
   - [ ] Replace ~find-file~ by ~with-temp-buffer~ + ~insert-file-contents~. See [[https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect][here]].
   - [ ] Use https://gongzhitaao.org/orgcss/ as default css instead the default one.
@@ -67,5 +67,6 @@
     - add a hook for switch-buffer function (store eligible page to navigation
       history). switch-buffer variable defaults to `switch-buffer`, can be
       customized to something like `ivy-switch-buffer`.
+  - [ ] Header selector
 
 
