@@ -13,7 +13,9 @@ explained as well.
 * TODO Wiki-based Configuration 
   
 #+BEGIN_SRC org
-
-
+~* COMMENT Local variables                                            :noexport:
+# local variables:
+# org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#")
+# end:
 #+END_SRC
 
