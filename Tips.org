@@ -9,3 +9,5 @@
 This page (should) include features whose ~emacs-lisp~ or ~org-mode~ already
 support with additional configuration. The integration with ~org-glaux~ will be
 explained as well.
+
+* TODO Wiki-based Configuration 
