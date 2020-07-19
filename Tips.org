@@ -11,6 +11,7 @@ support with additional configuration. The integration with ~org-glaux~ will be
 explained as well.
 
 * TODO Wiki-based Configuration 
+Add in the bottom of the wiki's index local variables.
   
 #+BEGIN_SRC org
 ~* COMMENT Local variables                                            :noexport:
