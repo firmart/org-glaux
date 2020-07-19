@@ -9,7 +9,7 @@
 ** TODO Wishlists
    - Support showing page description on point ([[https://emacs.stackexchange.com/questions/26674/tooltip-on-inline-images-in-org-mode][tooltip on inline images in org-mode]])
    - Support image gallery
-** TODO TODO tasks [17%]
+** TODO TODO tasks [13%]
    
   - [X] Documentation [1/1]
     - [X] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
@@ -58,13 +58,14 @@
   - [ ] Extend ~org-glaux--wiki-follow~ to something like ~:file~ link. Ref. ~org-link-open~ and [[https://orgmode.org/manual/External-Links.html][External-links]]. Support header searching.
   - [ ] Use ~index~ as wiki settings file and ~index/~ as general assets directory
   - [X] Add test suites
-  - [ ] Add Travis
+  - [ ] Add Travis (see [[https://github.com/rejeep/f.el][f.el]] for example).
   - [ ] Remove all checking procedure in internal functions. Only interactive one
     needs extra checks.
-  - [X] Add variant of automatic-commit
+  - [-] Add variant of automatic-commit
     - [X] ~close+follow~
     - [X] ~save~
     - [X] ~save+follow~
+    - [ ] html publish
   - [ ] Optional commit message
     - manual (current file)
     - On follow
