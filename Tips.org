@@ -14,7 +14,7 @@ explained as well.
 Add in the bottom of the wiki's index local variables.
   
 #+BEGIN_SRC org
-~* COMMENT Local variables                                            :noexport:
+,* COMMENT Local variables                                            :noexport:
 # local variables:
 # org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#")
 # end:
