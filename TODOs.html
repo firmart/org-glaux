@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2020-05-12 mar. 01:09 -->
+<!-- 2020-07-19 dim. 22:56 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TODOs</title>
@@ -18,7 +18,7 @@
 <div id="text-table-of-contents">
 <ul>
 <li><a href="#orgb3bcac0">1. <span class="todo TODO">TODO</span> Wishlists</a></li>
-<li><a href="#org5af9ad6">2. <span class="todo TODO">TODO</span> TODO tasks <code>[12%]</code></a></li>
+<li><a href="#org5af9ad6">2. <span class="todo TODO">TODO</span> TODO tasks <code>[13%]</code></a></li>
 </ul>
 </div>
 </nav>
@@ -33,7 +33,7 @@
 </div>
 </div>
 <div id="outline-container-org5af9ad6" class="outline-2">
-<h2 id="org5af9ad6"><span class="section-number-2">2</span> <span class="todo TODO">TODO</span> TODO tasks <code>[12%]</code></h2>
+<h2 id="org5af9ad6"><span class="section-number-2">2</span> <span class="todo TODO">TODO</span> TODO tasks <code>[13%]</code></h2>
 <div class="outline-text-2" id="text-2">
 <ul class="org-ul">
 <li class="on"><input type='checkbox' checked='checked' /> Documentation <code>[1/1]</code>
@@ -54,8 +54,17 @@
 <li class="off"><input type='checkbox' /> Dead website link highlight (use <code>url-http-file-exists-p</code> and prepend https if needed)</li>
 </ul></li>
 <li class="off"><input type='checkbox' /> org-glaux's version of <code>org-export-dispatch</code>.</li>
-<li class="off"><input type='checkbox' /> Fix new page overwriting header if parent directories doesn't exist.</li>
-<li class="off"><input type='checkbox' /> Add copy/renaming/moving page/assets facility</li>
+<li class="on"><input type='checkbox' checked='checked' /> Fix new page overwriting header if parent directories doesn't exist.</li>
+<li class="off"><input type='checkbox' /> Add move/copy page/assets facility
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> moving internal</li>
+<li class="off"><input type='checkbox' /> higher-order moving functions (page and assets dir)
+<ul class="org-ul">
+<li class="off"><input type='checkbox' /> take care of VCS</li>
+<li class="off"><input type='checkbox' /> refontify opened-buffers or specifically buffers having back-links (need cache)</li>
+<li class="off"><input type='checkbox' /> suggest to fix back links</li>
+</ul></li>
+</ul></li>
 <li class="off"><input type='checkbox' /> Add better template support like yas-snippets</li>
 <li class="off"><input type='checkbox' /> Consider <code>org-attach</code> before implementing download-related function.</li>
 <li class="on"><input type='checkbox' checked='checked' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/ert/index.html">ERT: Emacs Lisp Regression Testing</a>. Especially for all kind of function computing path.</li>
@@ -87,7 +96,7 @@
 <li class="on"><input type='checkbox' checked='checked' /> Frequently edited pages</li>
 </ul></li>
 </ul></li>
-<li class="off"><input type='checkbox' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html">progress bar</a> for time-consuming task</li>
+<li class="on"><input type='checkbox' checked='checked' /> add <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Progress.html">progress bar</a> for time-consuming task</li>
 </ul></li>
 <li class="off"><input type='checkbox' /> Provide lint function listing all break link and suggesting quick fix Ref. <a href="https://emacs.stackexchange.com/questions/5389/correcting-and-maintaining-org-mode-hyperlinks">correcting-and-maintaining-org-mode-hyperlinks</a></li>
 <li class="off"><input type='checkbox' /> Replace <code>find-file</code> by <code>with-temp-buffer</code> + <code>insert-file-contents</code>. See <a href="https://emacs.stackexchange.com/questions/2868/whats-wrong-with-find-file-noselect">here</a>.</li>
@@ -102,14 +111,37 @@
 <li class="off"><input type='checkbox' /> Extend <code>org-glaux--wiki-follow</code> to something like <code>:file</code> link. Ref. <code>org-link-open</code> and <a href="https://orgmode.org/manual/External-Links.html">External-links</a>. Support header searching.</li>
 <li class="off"><input type='checkbox' /> Use <code>index</code> as wiki settings file and <code>index/</code> as general assets directory</li>
 <li class="on"><input type='checkbox' checked='checked' /> Add test suites</li>
-<li class="off"><input type='checkbox' /> Add Travis</li>
+<li class="off"><input type='checkbox' /> Add Travis (see <a href="https://github.com/rejeep/f.el">f.el</a> for example).</li>
 <li class="off"><input type='checkbox' /> Remove all checking procedure in internal functions. Only interactive one
 needs extra checks.</li>
-<li class="off"><input type='checkbox' /> Add variant of automatic-commit
+<li class="trans"><input type='checkbox' /> Add variant of automatic-commit
 <ul class="org-ul">
-<li class="off"><input type='checkbox' /> <code>close+follow</code></li>
-<li class="off"><input type='checkbox' /> <code>save</code></li>
-<li class="off"><input type='checkbox' /> <code>save+follow</code></li>
+<li class="on"><input type='checkbox' checked='checked' /> <code>close+follow</code></li>
+<li class="on"><input type='checkbox' checked='checked' /> <code>save</code></li>
+<li class="on"><input type='checkbox' checked='checked' /> <code>save+follow</code></li>
+<li class="off"><input type='checkbox' /> html publish</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> Optional commit message
+<ul class="org-ul">
+<li>manual (current file)</li>
+<li>On follow</li>
+<li>On save</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> Org file option preventing export
+<ul class="org-ul">
+<li>current page + asset</li>
+<li>lower hierarchically page and assets</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> (Back)-navigation  
+<ul class="org-ul">
+<li>add a hook for switch-buffer function (store eligible page to navigation
+history). switch-buffer variable defaults to `switch-buffer`, can be
+customized to something like `ivy-switch-buffer`.</li>
+</ul></li>
+<li class="off"><input type='checkbox' /> Header selector</li>
+<li class="off"><input type='checkbox' /> use org-el-cache to speed up
+<ul class="org-ul">
+<li>stats</li>
 </ul></li>
 </ul>
 </div>
