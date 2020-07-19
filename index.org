@@ -14,3 +14,9 @@
 - [[wiki:TODOs][TODOs]]
 - [[wiki:Edit_history][Edit history]]
 - [[wiki:Tips][Tips]]
+
+* COMMENT Local variables                                            :noexport:
+# local variables:
+# org-attach-directory: "./data"
+# org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#")
+# end:
