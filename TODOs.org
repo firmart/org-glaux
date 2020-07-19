@@ -9,7 +9,7 @@
 ** TODO Wishlists
    - Support showing page description on point ([[https://emacs.stackexchange.com/questions/26674/tooltip-on-inline-images-in-org-mode][tooltip on inline images in org-mode]])
    - Support image gallery
-** TODO TODO tasks [13%]
+** TODO TODO tasks [17%]
    
   - [X] Documentation [1/1]
     - [X] Use org-glaux to write documentation. Ref. [[https://kitchingroup.cheme.cmu.edu/blog/2014/10/17/Generate-emacs-lisp-documentation/][Generate emacs-lisp documentation]]
@@ -21,8 +21,14 @@
   - [ ] Enhance navigation experience  [0/1]
     - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend https if needed)
   - [ ] org-glaux's version of ~org-export-dispatch~.
-  - [ ] Fix new page overwriting header if parent directories doesn't exist.
-  - [ ] Add copy/renaming/moving page/assets facility
+  - [X] Fix new page overwriting header if parent directories doesn't exist.
+  - [ ] Add copy page/assets facility
+    - [ ] moving internal
+    - [ ] higher-order moving functions (page and assets dir)
+      - [ ] take care of VCS
+      - [ ] refontify opened-buffers or specifically buffers having back-links (need cache)
+      - [ ] suggest to fix back links
+    - [ ] 
   - [ ] Add better template support like yas-snippets
   - [ ] Consider ~org-attach~ before implementing download-related function.
   - [X] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
