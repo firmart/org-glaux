@@ -17,6 +17,5 @@
 
 * COMMENT Local variables                                            :noexport:
 # local variables:
-# org-attach-directory: "./data"
 # org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#")
 # end:
