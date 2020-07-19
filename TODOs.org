@@ -22,13 +22,12 @@
     - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend https if needed)
   - [ ] org-glaux's version of ~org-export-dispatch~.
   - [X] Fix new page overwriting header if parent directories doesn't exist.
-  - [ ] Add copy page/assets facility
+  - [ ] Add move/copy page/assets facility
     - [ ] moving internal
     - [ ] higher-order moving functions (page and assets dir)
       - [ ] take care of VCS
       - [ ] refontify opened-buffers or specifically buffers having back-links (need cache)
       - [ ] suggest to fix back links
-    - [ ] 
   - [ ] Add better template support like yas-snippets
   - [ ] Consider ~org-attach~ before implementing download-related function.
   - [X] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
