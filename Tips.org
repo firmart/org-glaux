@@ -6,7 +6,7 @@
 #+DATE: 2020-05-04
 #+HTML_HEAD: <link rel="stylesheet" type="text/css" href="https://gongzhitaao.org/orgcss/org.css"/>
 
-This page (should) include features whose ~emacs-lisp~ or ~org-mode~ already
+This page is intended to include features whose ~emacs-lisp~ or ~org-mode~ already
 support with additional configuration. The integration with ~org-glaux~ will be
 explained as well.
 
