@@ -7,7 +7,7 @@
 ;; Version: 0.2
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux'
-;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5") (dash "2.17"))
 
 
 ;; This program is free software: you can redistribute it and/or
@@ -72,6 +72,7 @@ You can toggle read-only mode with \\<read-only-mode>."
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
 
+;; TODO change to a function type defaults to org-glaux--insert-header with org-glaux-template 
 (defcustom org-glaux-template
   (string-trim
    "
@@ -376,7 +377,8 @@ execution."
 	(progn 
 	  ;; 2. Perform the Move/rename operation on files
 	  (org-glaux--move-file-fpath src-fpath-page dest-fpath non-verb)
-	  (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb)
+	  (when (file-exists-p src-fpath-assets-dir)
+	    (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb))
 
 	  ;; 3. Update renamed/moved buffer associated filepath
 	  (when src-buffer
@@ -541,7 +543,7 @@ Note: This function is synchronous and blocks Emacs."
       (setq prev-page (pop org-glaux--page-history))
       (unless prev-page
 	(org-glaux--init-location)
-	(setq prev-page (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename))))
+	(setq prev-page (org-glaux--wiki-path-fpath org-glaux-index-file-basename))))
     (org-glaux--wiki-follow (org-glaux--file-wiki-path prev-page) t)))
 
 ;;;; Search
@@ -676,7 +678,7 @@ Note: This command requires Python3 installed."
   (org-glaux--vc-git-install-check)
   (when (and (not (org-glaux--vc-git-find-root org-glaux-location))
 	   (equal org-glaux-vc-backend 'git))
-    (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
+    (let ((index (org-glaux--wiki-path-fpath org-glaux-index-file-basename)))
       (with-current-buffer (find-file-noselect index)
 	(vc-git-create-repo)))))
 
@@ -685,7 +687,7 @@ Note: This command requires Python3 installed."
   "Register and commit all relevant files of the full wiki."
   (interactive)
   ;; move to index to obtain wiki-based configuration on ignored glob 
-  (let ((index (org-glaux--cur-wiki-path-fpath org-glaux-index-file-basename)))
+  (let ((index (org-glaux--wiki-path-fpath org-glaux-index-file-basename)))
     (with-current-buffer (find-file-noselect index)
       (org-glaux--vc-git-commit-files
        (directory-files-recursively org-glaux-location "^.*$")
@@ -760,7 +762,7 @@ Argument DESC: the link description."
   (org-link-make-string 
    (concat "wiki:" wiki-path)
    (if (or (string-empty-p desc) (not desc)) ;; if desc is an empty string or nil
-       (org-glaux--global-prop-value (org-glaux--cur-wiki-path-fpath wiki-path) "TITLE")
+       (org-glaux--global-prop-value (org-glaux--wiki-path-fpath wiki-path) "TITLE")
      desc)))
 
 (defun org-glaux--wiki-follow (wiki-path &optional no-history-p)
@@ -769,7 +771,7 @@ Argument DESC: the link description."
 - It pushes current wiki buffer into history so that `org-glaux-navi-back' can
 come back to it.
 - It returns the opened buffer."
-  (let ((page-fpath (org-glaux--cur-wiki-path-fpath wiki-path))
+  (let ((page-fpath (org-glaux--wiki-path-fpath wiki-path))
 	(dest-buffer)
 	(cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
@@ -787,6 +789,7 @@ come back to it.
 	(progn (setq dest-buffer (find-file page-fpath))
 	       (when org-glaux-default-read-only (read-only-mode t)))
       ;; if the page doesn't exist, create it
+      (make-directory (directory-file-name page-fpath) t)
       (setq dest-buffer (find-file page-fpath))
       ;; remove possible legacy buffer content
       (delete-region (point-min) (point-max)) 
@@ -1031,7 +1034,7 @@ Duplicated links are removed if RMDUP is non-nil."
   "Behave as Linux's command mv: move/rename SRC-FPATH to DEST-FPATH.
 
 	- SRC-FPATH and DEST-FPATH are respectively the full path of source and destination.
-	- Set NON-VERB to `t' to supress message emitted by this function.
+	- Set NON-VERB to \\[t] to supress message emitted by this function.
 	Note that parents directories are created if needed."
   ;; pre-handle directory to directory/file cases
   (if (file-exists-p src-fpath)
@@ -1105,7 +1108,7 @@ Duplicated links are removed if RMDUP is non-nil."
 
 (defun org-glaux--wiki-face (wiki-path)
   "Dynamic face for WIKI-PATH link."
-  (let ((fpath (org-glaux--cur-wiki-path-fpath wiki-path)))
+  (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
     (unless (file-remote-p fpath) ;; Do not connect to remote files
       (if (file-exists-p fpath)
           'org-link
@@ -1234,7 +1237,7 @@ Directory (ends with a slash \"/\"):
 
 (defun org-glaux--page->html-file (wiki-path)
   "Convert a page's WIKI-PATH to corresponding html filepath."
-  (org-glaux--replace-extension (org-glaux--cur-wiki-path-fpath wiki-path) "html"))
+  (org-glaux--replace-extension (org-glaux--wiki-path-fpath wiki-path) "html"))
 ;;;; Internal -- Predicate
 (defun org-glaux--is-file-in (fpath)
   "Return non-nil if FPATH is an org-glaux file under `org-glaux-location'."
@@ -1299,7 +1302,14 @@ Argument ORG-EXPORTER an org-exporter."
   "Filter FILES according to `org-glaux-vc-*' settings.
 
 See `org-glaux-vc-wiki-pages-only' and `org-glaux-vc-ignored-files-glob'."
-  (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in files)))
+  (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in
+				      (-flatten
+				       (mapcar
+					(lambda (f)
+					  (if (file-directory-p f)
+					      (directory-files-recursively f "^.*$")
+					    f))
+					files)))))
     (if org-glaux-vc-wiki-pages-only
 	;; keep only wiki pages
 	(cl-remove-if-not
