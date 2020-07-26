@@ -6,7 +6,7 @@
 ;; Maintainer: Firmin Martin
 ;; Version: 0.2
 ;; Keywords: outlines, files, convenience
-;; URL: https://www.github.com/firmart/org-glaux'
+;; URL: https://www.github.com/firmart/org-glaux
 ;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5") (dash "2.17"))
 
 
@@ -67,7 +67,7 @@ You can toggle read-only mode with \\<read-only-mode>."
 
 (defcustom org-glaux-close-root-switch t
   "If set, all org-glaux pages are closed when root directory is switched.
-\(Default value: true)"
+Default value: \\[t]"
   :type  'boolean
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
@@ -412,7 +412,7 @@ execution."
 	  ;; 6. In-sync with version control, removed files are committed unconditionally
 	  (org-glaux--vc-git-commit-files
 	   (list dest-fpath dest-fpath-assets-dir)
-	   'manual))
+	   'manual "org-glaux: automatic commit due to file renaming"))
       (error nil))))
 
 ;;;; Index
@@ -789,7 +789,7 @@ come back to it.
 	(progn (setq dest-buffer (find-file page-fpath))
 	       (when org-glaux-default-read-only (read-only-mode t)))
       ;; if the page doesn't exist, create it
-      (make-directory (directory-file-name page-fpath) t)
+      (make-directory (file-name-directory page-fpath) t)
       (setq dest-buffer (find-file page-fpath))
       ;; remove possible legacy buffer content
       (delete-region (point-min) (point-max)) 
