@@ -131,7 +131,7 @@ in index page."
   :package-version '(org-glaux . "0.2"))
 
 ;; TODO git: exclude auto-save file
-(defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#" ".#*")
+(defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#" "*.#*")
   "List of glob patterns to exclude file-path from version control.
 
   To specify a per-wiki or per-directory files pattern to ignore,
@@ -1302,8 +1302,8 @@ See  `org-glaux-vc-ignored-files-glob'."
 					      (directory-files-recursively f "^.*$")
 					    f))
 					files))))
-	(ignored-patterns (mapcar (lambda (p)
-				    (org-glaux--glob2regex p))
+	(ignored-patterns (mapcar (lambda (g)
+				    (org-glaux--glob2regex g))
 				  (append
 				   org-glaux-vc-ignored-files-glob
 				   org-glaux-vc-ignored-dirs-glob))))
