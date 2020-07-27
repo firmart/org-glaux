@@ -70,6 +70,7 @@
     - manual (current file)
     - On follow
     - On save
+  - [ ] local variable for org-file changing commit settings
   - [ ] Org file option preventing export
     - current page + asset
     - lower hierarchically page and assets
