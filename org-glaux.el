@@ -123,10 +123,9 @@ Default value: \\[t]"
 	  (mapcar (lambda (d) (format "*%s*" d)) vc-directory-exclusion-list))
   "List of glob patterns to exclude directories from version control.
 
-These ignored-patterns apply on every wiki and have effect only if
-`org-glaux-vc-wiki-pages-only' is nil.  To specify a per-wiki or
-per-directory files pattern to ignore, include them in a local `.gitignore'
-instead."
+To specify a per-wiki or per-directory files pattern to ignore,
+include them in a local `.gitignore' instead or as local variable
+in index page."
   :type '(repeat string)
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
@@ -135,17 +134,10 @@ instead."
 (defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#" ".#*")
   "List of glob patterns to exclude file-path from version control.
 
-These ignored-patterns apply on every wiki and have effect only if
-`org-glaux-vc-wiki-pages-only' is nil.  To specify a per-wiki or
-per-directory files pattern to ignore, include them in a local `.gitignore'
-instead."
+  To specify a per-wiki or per-directory files pattern to ignore,
+  include them in a local `.gitignore' instead or as local variable
+  in index page."
   :type '(repeat string)
-  :group 'org-glaux
-  :package-version '(org-glaux . "0.2"))
-
-(defcustom org-glaux-vc-wiki-pages-only nil
-  "If non-nil, the version control applies only on wiki pages (.org files)."
-  :type 'boolean
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
@@ -1301,7 +1293,7 @@ Argument ORG-EXPORTER an org-exporter."
 (defun org-glaux--vc-filter-files (files)
   "Filter FILES according to `org-glaux-vc-*' settings.
 
-See `org-glaux-vc-wiki-pages-only' and `org-glaux-vc-ignored-files-glob'."
+See  `org-glaux-vc-ignored-files-glob'."
   (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in
 				      (-flatten
 				       (mapcar
@@ -1309,22 +1301,20 @@ See `org-glaux-vc-wiki-pages-only' and `org-glaux-vc-ignored-files-glob'."
 					  (if (file-directory-p f)
 					      (directory-files-recursively f "^.*$")
 					    f))
-					files)))))
-    (if org-glaux-vc-wiki-pages-only
-	;; keep only wiki pages
-	(cl-remove-if-not
-	 (lambda (fpath) (string-suffix-p ".org" fpath))
-	 wiki-files)
-      (let ((ignored-patterns (mapcar (lambda (p) (org-glaux--glob2regex p))
-				      (append org-glaux-vc-ignored-files-glob org-glaux-vc-ignored-dirs-glob))))
-	;; remove ignored files
-	(cl-remove-if
-	 (lambda (fpath)
-	   (let ((remove? nil))
-	     (dolist (regex ignored-patterns remove?)
-	       ;; TODO short-circuit evaluation
-	       (setq remove? (or remove? (string-match-p regex fpath))))))
-	 wiki-files)))))
+					files))))
+	(ignored-patterns (mapcar (lambda (p)
+				    (org-glaux--glob2regex p))
+				  (append
+				   org-glaux-vc-ignored-files-glob
+				   org-glaux-vc-ignored-dirs-glob))))
+    ;; remove ignored files
+    (cl-remove-if
+     (lambda (fpath)
+       (let ((remove? nil))
+	 (dolist (regex ignored-patterns remove?)
+	   ;; TODO short-circuit evaluation
+	   (setq remove? (or remove? (string-match-p regex fpath))))))
+     wiki-files)))
 
 (defun org-glaux--vc-git-register-files (files)
   "Register FILES to commit according to `.gitignore' and filtering.
@@ -1335,11 +1325,8 @@ See `org-glaux--vc-filter-files'."
 	 (potential-candidates (org-glaux--vc-filter-files files))
 	 (candidates (cl-remove-if
 		      (lambda (fpath)
-			;; if `org-glaux-vc-wiki-pages-only' is nil
 			;; ignore file according to `.gitignore'.
-			;;(message "%s" fpath)
-			(or (unless org-glaux-vc-wiki-pages-only
-			     (equal (vc-git-state fpath) 'ignored))
+			(or (equal (vc-git-state fpath) 'ignored)
 			   ;; removed file should be register by *-register-removed-files
 			   (member (vc-git-state fpath) '(up-to-date removed))
 			   (> (file-attribute-size
