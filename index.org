@@ -17,5 +17,5 @@
 
 * COMMENT Local variables                                            :noexport:
 # local variables:
-# org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#")
+# org-glaux-vc-ignored-files-glob: '("*.bbl" "*.tex" "*~" "*#*?#" "*.#*")
 # end:
