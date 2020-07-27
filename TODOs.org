@@ -22,12 +22,15 @@
     - [ ] Dead website link highlight (use ~url-http-file-exists-p~ and prepend https if needed)
   - [ ] org-glaux's version of ~org-export-dispatch~.
   - [X] Fix new page overwriting header if parent directories doesn't exist.
-  - [ ] Add move/copy page/assets facility
-    - [ ] moving internal
-    - [ ] higher-order moving functions (page and assets dir)
-      - [ ] take care of VCS
-      - [ ] refontify opened-buffers or specifically buffers having back-links (need cache)
+  - [-] Add move page/assets facility
+    - [X] moving internal
+    - [-] higher-order moving functions (page and assets dir)
+      - [X] take care of VCS
+      - [X] refontify opened-buffers or specifically buffers having back-links (need cache)
       - [ ] suggest to fix back links
+      - [ ] Issue: rename directory to ~wiki/path~ create ~wiki/path.org~ instead
+        of ~wiki/path/~. If target wiki-path is ~wiki/path/~, the source dir
+        will be moved under it (instead of rename it).
   - [ ] Add better template support like yas-snippets
   - [ ] Consider ~org-attach~ before implementing download-related function.
   - [X] add [[https://www.gnu.org/software/emacs/manual/html_node/ert/index.html][ERT: Emacs Lisp Regression Testing]]. Especially for all kind of function computing path.
