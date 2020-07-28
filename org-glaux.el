@@ -37,6 +37,7 @@
 (require 'subr-x)     ;; Provides string trim functions.
 (require 'vc)
 (require 'vc-git)
+(require 'vc-hooks) ;; `vc-directory-exclusion-list'
 
 ;;; Code:
 ;;; Custom group
@@ -72,7 +73,7 @@ Default value: \\[t]"
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
 
-;; TODO change to a function type defaults to org-glaux--insert-header with org-glaux-template 
+;; TODO change to a function type defaults to org-glaux--insert-header with org-glaux-template
 (defcustom org-glaux-template
   (string-trim
    "
@@ -130,7 +131,6 @@ in index page."
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
 
-;; TODO git: exclude auto-save file
 (defcustom org-glaux-vc-ignored-files-glob '("*.html" "*.bbl" "*.tex" "*~" "*#*?#" "*.#*")
   "List of glob patterns to exclude file-path from version control.
 
@@ -328,83 +328,112 @@ execution."
 ;;;; Files
 
 ;; TODO move dir function (difficulty: update all file under old dir)
-
+;; 1. separate move and rename
+;; rename: file -> file
+;; rename: dir -> dir
+;; move: file -> dir
+;; move: dir -> dir
 ;; TODO Update back-links
 ;; TODO prefix C-u for inter-wiki move
+(defun org-glaux-rename (src-wiki-path new-page-base &optional non-verb)
+  "Rename SRC-WIKI-PATH with NEW-PAGE-BASE.
+
+If SRC-WIKI-PATH designates a page, its associated assets
+directory is renamed as well.  Conversely, if it designates an
+assets directory, rename its page as well.
+
+If NON-VERB is non-nil, suppress all message."
+  (interactive
+   (let ((src-wiki-path (completing-read
+			 "[Rename] Wiki-path of source (dir or page): "
+			 (mapcar (lambda (file)
+				   (org-glaux--file-wiki-path file))
+				 (append
+				  (org-glaux--pages-list)
+				  (org-glaux--dirs-list)))
+			 nil t))
+	 (new-page-base (read-from-minibuffer "[Rename] new name: ")))
+     (list src-wiki-path new-page-base nil)))
+
+  (when (or (string-empty-p src-wiki-path)
+	   (string-empty-p new-page-base))
+    (signal 'org-glaux--file-error (list "source or target is empty")))
+
+  (let* ((src-fpath (org-glaux--wiki-path-fpath src-wiki-path))
+	 (dest-fpath-assets-dir (file-name-as-directory (expand-file-name (concat "../" new-page-base) src-fpath)))
+	 (dest-fpath-page (concat (directory-file-name dest-fpath-assets-dir) ".org"))
+	 (src-fpath-page)
+	 (src-fpath-assets-dir))
+
+    (if (directory-name-p src-fpath)
+	(setq src-fpath-page (concat (directory-file-name src-fpath) ".org"))
+      (setq src-fpath-page src-fpath))
+
+    (if (directory-name-p src-fpath)
+	(setq src-fpath-assets-dir src-fpath)
+      (setq src-fpath-assets-dir (file-name-as-directory (file-name-sans-extension src-fpath))))
+    
+    ;; Interrupt immediately if there is any error.
+    (condition-case nil
+	(progn
+	  (when (file-exists-p src-fpath-page)
+	    (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
+	    (unless non-verb
+	      (message "org-glaux: rename %s -> %s" src-fpath-page dest-fpath-page)))
+
+	  (when (file-exists-p src-fpath-assets-dir)
+	    (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb)
+	    (unless non-verb
+	      (message "org-glaux: rename %s -> %s" src-fpath-assets-dir dest-fpath-assets-dir)))
+
+	  (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
+      (error nil))))
+
 (defun org-glaux-move-page (src-wiki-path dest-wiki-path &optional non-verb)
   "Move/rename wiki page and its assets directory.
 
-	  - SRC-WIKI-PATH is the wiki-path of the page to move/rename.
-	  - DEST-WIKI-PATH is 
-	    - either the wiki-path of a page to which SRC-WIKI-PATH will be renamed ;
-	    - or the wiki-path of a directory under which SRC-WIKI-PATH will be moved.
+- SRC-WIKI-PATH is the wiki-path of the page to move/rename.
+- DEST-WIKI-PATH is
+  - either the wiki-path of a page to which SRC-WIKI-PATH will be
+    renamed ;
+  - or the wiki-path of a directory under which SRC-WIKI-PATH will be moved.
 
-	  The assets directory associated to the wiki page is moved/renamed accordingly."
+The assets directory associated to the wiki page is moved/renamed accordingly.
+If NON-VERB is non-nil, suppress all message."
+
 
   (interactive
-   (let ((src-wiki-path (org-glaux--select 'identity))
-	 (dest-wiki-path (org-glaux--select 'identity)))
+   (let ((src-wiki-path (org-glaux--select 'identity "Wiki-path of source (page): "))
+	 (dest-wiki-path (org-glaux--select 'identity "Wiki-path of target (dir, page): ")))
      (list src-wiki-path dest-wiki-path nil)))
 
   (let* ((src-fpath-page (org-glaux--wiki-path-fpath src-wiki-path))
 	 (src-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory src-wiki-path)))
-	 (src-buffer (get-file-buffer src-fpath-page))
-	 (dest-fpath (org-glaux--wiki-path-fpath dest-wiki-path))
+	 
+	 (dest-fpath-page (org-glaux--wiki-path-fpath dest-wiki-path))
 	 (dest-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory dest-wiki-path)))
-	 (org-glaux-location-list-norm (mapcar #'expand-file-name org-glaux-location-list)))  
+	 (org-glaux-location-list-norm (mapcar #'expand-file-name org-glaux-location-list)))
 
-    ;; 1. Check that we operate inside the wikis 
+    ;; Check that we operate inside the wikis
     (when (cl-notany
-	   (lambda (wiki-dir) (string-prefix-p (file-name-as-directory wiki-dir) src-fpath-page))
+	   (lambda (wiki-dir) (file-in-directory-p src-fpath-page (file-name-as-directory wiki-dir)))
 	   org-glaux-location-list-norm)
       (signal 'org-glaux--file-error (list "attempt to move external file" src-fpath-page)))
 
     (when (cl-notany
-	   (lambda (wiki-dir) (string-prefix-p (file-name-as-directory wiki-dir) dest-fpath))
+	   (lambda (wiki-dir) (file-in-directory-p dest-fpath-page (file-name-as-directory wiki-dir) ))
 	   org-glaux-location-list-norm)
-      (signal 'org-glaux--file-error (list "attempt to move file outside wikis" dest-fpath)))
+      (signal 'org-glaux--file-error (list "attempt to move file outside wikis" dest-fpath-page)))
 
     ;; Interrupt immediately if there is any error.
-    (condition-case err
-	(progn 
-	  ;; 2. Perform the Move/rename operation on files
-	  (org-glaux--move-file-fpath src-fpath-page dest-fpath non-verb)
+    (condition-case nil
+	(progn
+	  ;; Perform the Move/rename operation on files
+	  (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
 	  (when (file-exists-p src-fpath-assets-dir)
 	    (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb))
 
-	  ;; 3. Update renamed/moved buffer associated filepath
-	  (when src-buffer
-	    (with-current-buffer src-buffer
-	      (set-visited-file-name
-	       ;; depending dest-wiki-path
-	       (if (directory-name-p dest-wiki-path)
-		   (concat dest-fpath (file-name-nondirectory src-fpath-page))
-		 dest-fpath))))
-
-	  ;; 4. Update buffers' associated filepath under moved/renamed assets directory
-	  (mapc 
-	   (lambda (b)
-	     (with-current-buffer b
-	       (set-visited-file-name
-		(concat
-		 dest-fpath-assets-dir
-		 (file-name-as-directory (file-name-base src-fpath-page))
-		 (file-relative-name (buffer-file-name b) src-fpath-assets-dir))))) 
-	   (cl-remove-if-not 
-	    (lambda (b) (and (org-glaux--is-buffer-in b)
-		      (string-prefix-p src-fpath-assets-dir (buffer-file-name b))))
-	    (buffer-list)))
-
-	  ;; 5. Refontify wiki page buffers
-	  (mapc (lambda (b) 
-		  (with-current-buffer b
-		    (font-lock-flush)))
-		(org-glaux--get-buffers-filename))
-
-	  ;; 6. In-sync with version control, removed files are committed unconditionally
-	  (org-glaux--vc-git-commit-files
-	   (list dest-fpath dest-fpath-assets-dir)
-	   'manual "org-glaux: automatic commit due to file renaming"))
+	  (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
       (error nil))))
 
 ;;;; Index
@@ -490,7 +519,7 @@ Note: This function is synchronous and blocks Emacs."
 (defun org-glaux-menu-enable ()
   "Build a menu for org-glaux."
   (interactive)
-  (require 'easymenu)   
+  (require 'easymenu)
   (easy-menu-define org-glaux-menu global-map "Org-glaux"
     (list "org-glaux"
 	  (org-glaux--easy-menu-entry "Backup" "org-glaux-backup")
@@ -587,7 +616,7 @@ Note: This function is synchronous and blocks Emacs."
 
 The html page is created if it doesn't exist yet."
   (interactive)
-  (let ((target (completing-read "Wiki pages:" (org-glaux--page-files)))
+  (let ((target (completing-read "Wiki pages:" (org-glaux--pages-list)))
 	(action
 	 (lambda (fpath)
 	   (let ((html-file   (org-glaux--replace-extension fpath "html")))
@@ -635,28 +664,28 @@ The html page is created if it doesn't exist yet."
 Note: This command requires Python3 installed."
   (interactive)
   (let (;; Process name
-        (pname  "org-glaux-server")
-        ;; Buffer name - Display process output (stdout)
-        (bname   "*org-glaux-server*")
-        ;; Set current directory to org-glaux repository.
-        (default-directory org-glaux-location))
+	(pname  "org-glaux-server")
+	;; Buffer name - Display process output (stdout)
+	(bname   "*org-glaux-server*")
+	;; Set current directory to org-glaux repository.
+	(default-directory org-glaux-location))
     (if (not (get-buffer bname))
-        (progn
-          (sit-for 0.1)
-          (switch-to-buffer bname)
-          (save-excursion ;; Save cursor position
+	(progn
+	  (sit-for 0.1)
+	  (switch-to-buffer bname)
+	  (save-excursion ;; Save cursor position
 	    (insert "Server started ...\n\n")
 	    (message "org-glaux: server started ..."))
-          (start-process pname
-                         bname
-                         "python3"
-                         "-m"
-                         "http.server"
-                         "--bind"
-                         org-glaux-server-host
-                         org-glaux-server-port)
-          (when (y-or-n-p "Open server in browser ? ")
-            (browse-url (format "http://localhost:%s" org-glaux-server-port))))
+	  (start-process pname
+			 bname
+			 "python3"
+			 "-m"
+			 "http.server"
+			 "--bind"
+			 org-glaux-server-host
+			 org-glaux-server-port)
+	  (when (y-or-n-p "Open server in browser ? ")
+	    (browse-url (format "http://localhost:%s" org-glaux-server-port))))
       (progn  (switch-to-buffer bname)
 	      (kill-process (get-process pname))
 	      (message "org-glaux: server stopped")))))
@@ -678,7 +707,7 @@ Note: This command requires Python3 installed."
 (defun org-glaux-vc-git-full-commit ()
   "Register and commit all relevant files of the full wiki."
   (interactive)
-  ;; move to index to obtain wiki-based configuration on ignored glob 
+  ;; move to index to obtain wiki-based configuration on ignored glob
   (let ((index (org-glaux--wiki-path-fpath org-glaux-index-file-basename)))
     (with-current-buffer (find-file-noselect index)
       (org-glaux--vc-git-commit-files
@@ -751,24 +780,27 @@ Optional arguments TITLE and DATE."
   "Return a string containing a wiki link [[wiki:WIKI-PATH][TITLE]].
 Argument WIKI-PATH: the link which is a wiki-path.
 Argument DESC: the link description."
-  (org-link-make-string 
+  (org-link-make-string
    (concat "wiki:" wiki-path)
    (if (or (string-empty-p desc) (not desc)) ;; if desc is an empty string or nil
        (org-glaux--global-prop-value (org-glaux--wiki-path-fpath wiki-path) "TITLE")
      desc)))
 
-(defun org-glaux--wiki-follow (wiki-path &optional no-history-p)
+(defun org-glaux--wiki-follow (wiki-path &optional no-history?)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
 
 - It pushes current wiki buffer into history so that `org-glaux-navi-back' can
 come back to it.
-- It returns the opened buffer."
+- It returns the opened buffer.
+
+If NO-HISTORY? is non-nil, do not push the `current-buffer' to
+navigation history stack."
   (let ((page-fpath (org-glaux--wiki-path-fpath wiki-path))
 	(dest-buffer)
 	(cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
     (when (and (org-glaux--is-buffer-in (current-buffer))
-	     (not no-history-p))
+	     (not no-history?))
       (push cur-buf-fpath org-glaux--page-history))
     ;; register & commit into vcs (if in follow mode)
     (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
@@ -784,7 +816,7 @@ come back to it.
       (make-directory (file-name-directory page-fpath) t)
       (setq dest-buffer (find-file page-fpath))
       ;; remove possible legacy buffer content
-      (delete-region (point-min) (point-max)) 
+      (delete-region (point-min) (point-max))
       (org-glaux--insert-header)
       (save-buffer)
       ;; refontify previous buffer as the wiki link exist now
@@ -818,14 +850,14 @@ Argument FORMAT format to export."
   "Return an alist (PAGE-FPATH . LINK-TYPE list)."
   (mapcar (lambda (f)
 	    (cons f (apply #'org-glaux--get-file-links f link-type)))
-	  (org-glaux--page-files)))
+	  (org-glaux--pages-list)))
 
 ;;;###autoload
 (defun org-glaux--get-all-links-count-by-page (&rest link-type)
   "Return a list of links count of type LINK-TYPE."
   (mapcar (lambda (f)
 	    (length (apply #'org-glaux--get-file-links f link-type)))
-	  (org-glaux--page-files)))
+	  (org-glaux--pages-list)))
 
 
 (defun org-glaux--get-page-back-links (fpath &optional wlbp)
@@ -996,7 +1028,7 @@ LINKS-COUNT is computed when needed."
   "Given LBP (page . links) alist, compute the number of links by page.
 
 Duplicated links are removed if RMDUP is non-nil."
-  (mapcar (lambda (entry) (length (if rmdup 
+  (mapcar (lambda (entry) (length (if rmdup
 				 (remove-duplicates (cdr entry))
 			       (cdr entry))))
 	  lbp))
@@ -1022,34 +1054,79 @@ Duplicated links are removed if RMDUP is non-nil."
 
 (define-error 'org-glaux--file-error "File error")
 
-(defun org-glaux--move-file-fpath (src-fpath dest-fpath &optional non-verb)  
+(defun org-glaux--move-file-fpath (src-fpath dest-fpath &optional non-verb)
   "Behave as Linux's command mv: move/rename SRC-FPATH to DEST-FPATH.
 
-	- SRC-FPATH and DEST-FPATH are respectively the full path of source and destination.
+	- SRC-FPATH and DEST-FPATH are respectively the full path of source and
+          destination.
 	- Set NON-VERB to \\[t] to supress message emitted by this function.
 	Note that parents directories are created if needed."
   ;; pre-handle directory to directory/file cases
   (if (file-exists-p src-fpath)
       ;; source file is directory
       (when (file-directory-p src-fpath)
+	;; check if src-fpath = `org-glaux-location'
+	(when (string-equal src-fpath (expand-file-name org-glaux-location))
+	  (signal 'org-glaux--file-error (list "attempt to move wiki location")))
+	;; dest file is directory
 	(if (file-exists-p dest-fpath)
 	    ;; dest file is directory
 	    (if (file-directory-p dest-fpath)
-		;; they both end with "/", thus string-prefix-p = parent-directory-p 
-		(when (string-prefix-p src-fpath dest-fpath) 
+		(when (file-in-directory-p dest-fpath src-fpath)
 		  (signal 'org-glaux--file-error (list "cannot move" src-fpath "to a subdirectory of itself" dest-fpath)))
 	      (signal 'org-glaux--file-error (list "cannot overwrite non-directory" dest-fpath "with directory" src-fpath)))
 	  (when (directory-name-p dest-fpath)
 	    ;; To rename a directory with `rename-file', dest-fpath should not end with slash
 	    (setq dest-fpath (directory-file-name dest-fpath)))))
-    (signal 'org-glaux--file-error (list "source file doesn't exist" src-fpath))) 
+    (signal 'org-glaux--file-error (list "source file doesn't exist" src-fpath)))
 
   ;; could fail if 2nd arg is nil (relative path)
+  (message "%s" dest-fpath)
   (make-directory (file-name-directory dest-fpath) t)
-  (rename-file src-fpath dest-fpath 0)
-  (unless non-verb
-    ;;TODO consider dest as dir/file
-    (message "org-glaux: moved '%s' -> '%s'" src-fpath dest-fpath))) 
+  (rename-file src-fpath dest-fpath 0))
+
+;; TODO update backlinks
+;; TODO update navigation history
+;; TODO define a move-hook and append subroutine in this function
+(defun org-glaux--move-hook  (src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir)
+  "Update buffers and VC after file renaming.
+
+The following links are absolute.
+- SRC-FPATH-PAGE: source wiki page filepath
+- SRC-FPATH-ASSETS-DIR: source assets directory filepath
+- DEST-FPATH-PAGE: target wiki page filepath
+- DEST-FPATH-ASSETS-DIR: target assets directory filepath"
+  (let ((src-buffer (get-file-buffer src-fpath-page)))
+
+    ;; Update renamed/moved buffer associated filepath
+    (when src-buffer
+      (with-current-buffer src-buffer
+	(set-visited-file-name dest-fpath-page)))
+
+    ;; Update buffers' associated filepath under moved/renamed assets directory
+    (mapc
+     (lambda (b)
+       (with-current-buffer b
+	 (set-visited-file-name
+	  (concat
+	   dest-fpath-assets-dir
+	   (file-name-as-directory (file-name-base src-fpath-page))
+	   (file-relative-name (buffer-file-name b) src-fpath-assets-dir)))))
+     (cl-remove-if-not
+      (lambda (b) (and (org-glaux--is-buffer-in b)
+		(file-in-directory-p (buffer-file-name b) src-fpath-assets-dir)))
+      (buffer-list)))
+
+    ;; Refontify wiki page buffers
+    (mapc (lambda (b)
+	    (with-current-buffer b
+	      (font-lock-flush)))
+	  (org-glaux--get-buffers-filename))
+
+    ;; In-sync with version control, removed files are committed unconditionally
+    (org-glaux--vc-git-commit-files
+     (list dest-fpath-page dest-fpath-assets-dir)
+     'manual "org-glaux: automatic commit due to file renaming")))
 
 ;;;; Internal -- List
 (defun org-glaux--assets-page-files (dirpath)
@@ -1086,26 +1163,40 @@ Duplicated links are removed if RMDUP is non-nil."
 	   (org-glaux--is-buffer-in buffer))))
    (buffer-list)))
 
-(defun org-glaux--page-files ()
+(defun org-glaux--pages-list ()
   "Return a list containing all wiki-pages under `org-glaux-location`."
   (org-glaux--init-location)
-  (cl-remove-if
-   (lambda (f)
-     (let ((b (file-name-base f)))
-       (or (string-prefix-p ".#" b)
-	  (string-suffix-p "~"  b)
-	  (string-prefix-p "#"  b)
-	  (string-suffix-p "#"  b))))
-   (directory-files-recursively org-glaux-location "\\.org$")))
+  (let ((ignored-regexs (mapcar
+			 #'org-glaux--glob2regex
+			 (append
+			  org-glaux-vc-ignored-files-glob
+			  org-glaux-vc-ignored-dirs-glob))))
+    (org-glaux--vc-ignore-files
+     (directory-files-recursively org-glaux-location "\\.org$")
+     ignored-regexs)))
 
-(defun org-glaux--wiki-face (wiki-path)
-  "Dynamic face for WIKI-PATH link."
-  (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
-    (unless (file-remote-p fpath) ;; Do not connect to remote files
-      (if (file-exists-p fpath)
-          'org-link
-	;; file link broken
-        'org-warning))))
+(defun org-glaux--dirs-list ()
+  "Return all (sub)-directories under `org-glaux-location'."
+  (org-glaux--init-location)
+  (let ((ignored-regexs (mapcar
+			 #'org-glaux--glob2regex
+			 org-glaux-vc-ignored-dirs-glob)))
+    (mapcar
+     #'file-name-as-directory
+     (org-glaux--vc-ignore-files
+      (cl-remove-if-not
+       #'file-directory-p
+       (directory-files-recursively org-glaux-location "" t))
+      ignored-regexs))))
+
+ (defun org-glaux--wiki-face (wiki-path)
+   "Dynamic face for WIKI-PATH link."
+   (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
+     (unless (file-remote-p fpath) ;; Do not connect to remote files
+       (if (file-exists-p fpath)
+	   'org-link
+	 ;; file link broken
+	 'org-warning))))
 
 (defun org-glaux--url-face (url)
   "Dynamic face for URL links."
@@ -1190,7 +1281,7 @@ Argument FPATH: filepath."
 
 BUFFER-FPATH defaults to current buffer filepath.
 
-Page: 
+Page:
   - Relative wiki-path:
     - Children page: \"/test\" -> \"<current-file-assets-dir>/test.org\"
     - Sibling page: \"../test\" -> \"<current-dir>/test.org\"
@@ -1199,13 +1290,13 @@ Directory (ends with a slash \"/\"):
   - Relative wiki-path:
     - Children directory: \"/test/\" -> \"<current-file-assets-dir>/test/\"
     - Sibling directory: \"../test/\" -> \"<current-dir>/test/\"
-  - Absolute wiki-path: 
+  - Absolute wiki-path:
     - \"/\" -> \"<org-glaux-location>/\"
-    - \"test/\" -> \"<org-glaux-location>/test/\"" 
+    - \"test/\" -> \"<org-glaux-location>/test/\""
   (let ((buffer-fpath (or buffer-fpath buffer-file-name)))
     (if (string-empty-p wiki-path)
 	(file-name-as-directory (expand-file-name org-glaux-location))
-      (let ((prefix-path 
+      (let ((prefix-path
 	     (expand-file-name
 	      (concat
 	       ;; if wiki-path starts with (../)+ or / then it's a relative wiki-path
@@ -1233,7 +1324,7 @@ Directory (ends with a slash \"/\"):
 ;;;; Internal -- Predicate
 (defun org-glaux--is-file-in (fpath)
   "Return non-nil if FPATH is an org-glaux file under `org-glaux-location'."
-  (string-prefix-p (expand-file-name org-glaux-location) fpath))
+  (file-in-directory-p fpath (expand-file-name org-glaux-location)))
 
 (defun org-glaux--is-buffer-in (buffer)
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
@@ -1256,16 +1347,20 @@ Argument ORG-EXPORTER an org-exporter."
     plist-base))
 
 ;;;; Internal -- Selection
-(defun org-glaux--select (callback)
-  "Select a wiki page and invokes the CALLBACK function on it."
-  (let ((target (completing-read "Wiki pages: "
+(defun org-glaux--select (callback &optional prompt)
+  "Select a wiki page and invokes the CALLBACK function on it.
+
+Use PROMPT if it is non-nil."
+  (let ((target (completing-read (or prompt "Wiki pages: ")
 				 (mapcar (lambda (file) (org-glaux--file-wiki-path file))
-					 (org-glaux--page-files)))))
+					 (org-glaux--pages-list)))))
     (funcall callback target)))
 
-(defun org-glaux--assets-select (callback)
-  "Select an asset of the current page and invokes the CALLBACK function on it."
-  (let ((target (completing-read "Wiki pages: "
+(defun org-glaux--assets-select (callback &optional prompt)
+  "Select an asset of the current page and invokes the CALLBACK function on it.
+
+Use PROMPT if it is non-nil."
+  (let ((target (completing-read (or prompt "Wiki pages: ")
 				 (org-glaux--assets-page-files
 				  (file-name-sans-extension buffer-file-name)))))
     (funcall callback (org-glaux--cur-page-assets-file target))))
@@ -1290,31 +1385,36 @@ Argument ORG-EXPORTER an org-exporter."
   If \".git\" is not found, return nil, otherwise return the root."
   (vc-find-root fpath ".git"))
 
+(defun org-glaux--vc-ignore-files (files ignored-regexs)
+  "Return FILES (filepath list) without those matching IGNORED-REGEXS."
+  (cl-remove-if
+   (lambda (fpath)
+     (let ((remove? nil))
+       (dolist (regex ignored-regexs remove?)
+	 ;; TODO short-circuit evaluation
+	 (setq remove? (or remove? (string-match-p regex fpath))))))
+   files))
+
 (defun org-glaux--vc-filter-files (files)
-  "Filter FILES according to `org-glaux-vc-*' settings.
+"Filter FILES according to `org-glaux-vc-*' settings.
 
 See  `org-glaux-vc-ignored-files-glob'."
-  (let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in
-				      (-flatten
-				       (mapcar
-					(lambda (f)
-					  (if (file-directory-p f)
-					      (directory-files-recursively f "^.*$")
-					    f))
-					files))))
-	(ignored-patterns (mapcar (lambda (g)
-				    (org-glaux--glob2regex g))
-				  (append
-				   org-glaux-vc-ignored-files-glob
-				   org-glaux-vc-ignored-dirs-glob))))
-    ;; remove ignored files
-    (cl-remove-if
-     (lambda (fpath)
-       (let ((remove? nil))
-	 (dolist (regex ignored-patterns remove?)
-	   ;; TODO short-circuit evaluation
-	   (setq remove? (or remove? (string-match-p regex fpath))))))
-     wiki-files)))
+(let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in
+				    (-flatten
+				     (mapcar
+				      (lambda (f)
+					(if (file-directory-p f)
+					    (directory-files-recursively f "^.*$")
+					  f))
+				      files))))
+      (ignored-regexs (mapcar
+		       #'org-glaux--glob2regex
+		       (append
+			org-glaux-vc-ignored-files-glob
+			org-glaux-vc-ignored-dirs-glob))))
+  ;; remove ignored files
+  (org-glaux--vc-ignore-files wiki-files ignored-regexs)))
+
 
 (defun org-glaux--vc-git-register-files (files)
   "Register FILES to commit according to `.gitignore' and filtering.
@@ -1388,13 +1488,13 @@ Should be called after `org-glaux--vc-git-register-files'"
 				      (error-message-string err)))))))
 
 (defun org-glaux--vc-git-commit-on-save ()
-  "Commit change into git on save."
-  (when (and (member org-glaux-vc-commit-when '(save close+save follow+save close+follow+save))
-	   (org-glaux--is-buffer-in (current-buffer)))
-    (org-glaux--vc-git-commit-files
-     (list buffer-file-name)
-     'save
-     "org-glaux: automatic commit on page save"))) 
+"Commit change into git on save."
+(when (and (member org-glaux-vc-commit-when '(save close+save follow+save close+follow+save))
+	 (org-glaux--is-buffer-in (current-buffer)))
+  (org-glaux--vc-git-commit-files
+   (list buffer-file-name)
+   'save
+   "org-glaux: automatic commit on page save")))
 
 (add-hook 'after-save-hook 'org-glaux--vc-git-commit-on-save)
 
@@ -1408,14 +1508,14 @@ Should be called after `org-glaux--vc-git-register-files'"
 	     (org-glaux--vc-git-get-vc-files)))))
 
 (defun org-glaux--vc-git-get-vc-files ()
-  "Return all files in the working tree under git VCS."
-  (let ((default-directory org-glaux-location))
-    ;; If there is no yet any commit, commands below will fail
-    ;; First check if it's the case or not with git branch -a
-    (when (process-lines vc-git-program "branch" "-a") 
-      (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
-	      (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
-		(process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
+"Return all files in the working tree under git VCS."
+(let ((default-directory org-glaux-location))
+  ;; If there is no yet any commit, commands below will fail
+  ;; First check if it's the case or not with git branch -a
+  (when (process-lines vc-git-program "branch" "-a")
+    (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
+	    (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
+	      (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
 
 ;;;; Internal -- Miscellaneous
 (defun org-glaux--batch-execute-list (f size data-list)
