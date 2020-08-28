@@ -75,19 +75,15 @@ Default value: \\[t]"
 
 ;; TODO change to a function type defaults to org-glaux--insert-header with org-glaux-template
 (defcustom org-glaux-template
-  (string-trim
-   "
-#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
+  "#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
 #+TITLE: %n
 #+DESCRIPTION:
 #+TAGS:
 #+STARTUP:  overview
-#+DATE: %d
-")
+#+DATE: %d"
   "Default template used to create org-glaux pages/files.
 - %n - is replaced by the page name.
 - %d - is replaced by current date in the format year-month-day."
-
   :type 'string
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
@@ -207,7 +203,7 @@ in index page."
          (default-directory  org-glaux-location))
     (switch-to-buffer "*org-glaux-backup*")
 
-    ;; Crate org-glaux backup location directory if doesn't exist.
+    ;; Create org-glaux backup location directory if doesn't exist.
     (if (not (file-exists-p org-glaux-backup-location))
         (make-directory org-glaux-backup-location t))
 
@@ -241,7 +237,7 @@ in index page."
   ;; register all opened files to version control
   (let ((wiki-buffers
 	 (cl-remove-if-not
-	  (lambda (b) (and (org-glaux--is-buffer-in b)
+	  (lambda (b) (and (org-glaux--wiki-buffer-p b)
 		    (string-suffix-p ".org" (buffer-file-name b))))
 	  (buffer-list))))
     (mapc (lambda (b) (with-current-buffer b (save-buffer))) wiki-buffers)
@@ -345,48 +341,48 @@ assets directory, rename its page as well.
 If NON-VERB is non-nil, suppress all message."
   (interactive
    (let ((src-wiki-path (completing-read
-			 "[Rename] Wiki-path of source (dir or page): "
-			 (mapcar (lambda (file)
-				   (org-glaux--file-wiki-path file))
-				 (append
-				  (org-glaux--pages-list)
-				  (org-glaux--dirs-list)))
-			 nil t))
-	 (new-page-base (read-from-minibuffer "[Rename] new name: ")))
+			                   "[Rename] wiki-path of source (dir or page): "
+			                   (mapcar (lambda (file)
+				                           (org-glaux--file-wiki-path file))
+				                         (append
+				                          (org-glaux--pages-list)
+				                          (org-glaux--dirs-list)))
+			                   nil t))
+	       (new-page-base (read-from-minibuffer "[Rename] new base name: ")))
      (list src-wiki-path new-page-base nil)))
 
   (when (or (string-empty-p src-wiki-path)
-	   (string-empty-p new-page-base))
+	         (string-empty-p new-page-base))
     (signal 'org-glaux--file-error (list "source or target is empty")))
 
   (let* ((src-fpath (org-glaux--wiki-path-fpath src-wiki-path))
-	 (dest-fpath-assets-dir (file-name-as-directory (expand-file-name (concat "../" new-page-base) src-fpath)))
-	 (dest-fpath-page (concat (directory-file-name dest-fpath-assets-dir) ".org"))
-	 (src-fpath-page)
-	 (src-fpath-assets-dir))
+	       (dest-fpath-assets-dir (file-name-as-directory (expand-file-name (concat "../" new-page-base) src-fpath)))
+	       (dest-fpath-page (concat (directory-file-name dest-fpath-assets-dir) ".org"))
+	       (src-fpath-page)
+	       (src-fpath-assets-dir))
 
     (if (directory-name-p src-fpath)
-	(setq src-fpath-page (concat (directory-file-name src-fpath) ".org"))
+	      (setq src-fpath-page (concat (directory-file-name src-fpath) ".org"))
       (setq src-fpath-page src-fpath))
 
     (if (directory-name-p src-fpath)
-	(setq src-fpath-assets-dir src-fpath)
+	      (setq src-fpath-assets-dir src-fpath)
       (setq src-fpath-assets-dir (file-name-as-directory (file-name-sans-extension src-fpath))))
-    
+
     ;; Interrupt immediately if there is any error.
     (condition-case nil
-	(progn
-	  (when (file-exists-p src-fpath-page)
-	    (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
-	    (unless non-verb
-	      (message "org-glaux: rename %s -> %s" src-fpath-page dest-fpath-page)))
+	      (progn
+	        (when (file-exists-p src-fpath-page)
+	          (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
+	          (unless non-verb
+	            (message "org-glaux: rename %s -> %s" src-fpath-page dest-fpath-page)))
 
-	  (when (file-exists-p src-fpath-assets-dir)
-	    (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb)
-	    (unless non-verb
-	      (message "org-glaux: rename %s -> %s" src-fpath-assets-dir dest-fpath-assets-dir)))
+	        (when (file-exists-p src-fpath-assets-dir)
+	          (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb)
+	          (unless non-verb
+	            (message "org-glaux: rename %s -> %s" src-fpath-assets-dir dest-fpath-assets-dir)))
 
-	  (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
+	        (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
       (error nil))))
 
 (defun org-glaux-move-page (src-wiki-path dest-wiki-path &optional non-verb)
@@ -404,36 +400,36 @@ If NON-VERB is non-nil, suppress all message."
 
   (interactive
    (let ((src-wiki-path (org-glaux--select 'identity "Wiki-path of source (page): "))
-	 (dest-wiki-path (org-glaux--select 'identity "Wiki-path of target (dir, page): ")))
+	       (dest-wiki-path (org-glaux--select 'identity "Wiki-path of target (dir, page): ")))
      (list src-wiki-path dest-wiki-path nil)))
 
   (let* ((src-fpath-page (org-glaux--wiki-path-fpath src-wiki-path))
-	 (src-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory src-wiki-path)))
-	 
-	 (dest-fpath-page (org-glaux--wiki-path-fpath dest-wiki-path))
-	 (dest-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory dest-wiki-path)))
-	 (org-glaux-location-list-norm (mapcar #'expand-file-name org-glaux-location-list)))
+	       (src-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory src-wiki-path)))
+
+	       (dest-fpath-page (org-glaux--wiki-path-fpath dest-wiki-path))
+	       (dest-fpath-assets-dir (org-glaux--wiki-path-fpath (file-name-as-directory dest-wiki-path)))
+	       (org-glaux-location-list-norm (mapcar #'expand-file-name org-glaux-location-list)))
 
     ;; Check that we operate inside the wikis
     (when (cl-notany
-	   (lambda (wiki-dir) (file-in-directory-p src-fpath-page (file-name-as-directory wiki-dir)))
-	   org-glaux-location-list-norm)
+	         (lambda (wiki-dir) (file-in-directory-p src-fpath-page (file-name-as-directory wiki-dir)))
+	         org-glaux-location-list-norm)
       (signal 'org-glaux--file-error (list "attempt to move external file" src-fpath-page)))
 
     (when (cl-notany
-	   (lambda (wiki-dir) (file-in-directory-p dest-fpath-page (file-name-as-directory wiki-dir) ))
-	   org-glaux-location-list-norm)
+	         (lambda (wiki-dir) (file-in-directory-p dest-fpath-page (file-name-as-directory wiki-dir) ))
+	         org-glaux-location-list-norm)
       (signal 'org-glaux--file-error (list "attempt to move file outside wikis" dest-fpath-page)))
 
     ;; Interrupt immediately if there is any error.
     (condition-case nil
-	(progn
-	  ;; Perform the Move/rename operation on files
-	  (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
-	  (when (file-exists-p src-fpath-assets-dir)
-	    (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb))
+	      (progn
+	        ;; Perform the Move/rename operation on files
+	        (org-glaux--move-file-fpath src-fpath-page dest-fpath-page non-verb)
+	        (when (file-exists-p src-fpath-assets-dir)
+	          (org-glaux--move-file-fpath src-fpath-assets-dir dest-fpath-assets-dir non-verb))
 
-	  (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
+	        (org-glaux--move-hook src-fpath-page src-fpath-assets-dir dest-fpath-page dest-fpath-assets-dir))
       (error nil))))
 
 ;;;; Index
@@ -486,26 +482,36 @@ Note: This function is synchronous and blocks Emacs."
    (lambda (output-file)
      (save-excursion (insert (format "[[file:%s/%s][%s]]"
 				     (file-name-base buffer-file-name) output-file output-file))))))
+
 ;;;###autoload
 (defun org-glaux-insert-new-link ()
-  "Create a new wiki page and insert a link to it at point."
+  "Insert a new link at point."
   (interactive)
   (let ((page-name (read-string  "Page wiki-link: "))
-	(desc (read-string "Description: ")))
+        (desc (read-string "Description: "
+                           (when (use-region-p)
+                             (buffer-substring-no-properties
+                              (region-beginning)
+                              (region-end))))))
     (save-excursion
+      (when (use-region-p) (delete-region (region-beginning) (region-end)))
       (insert (org-link-make-string (concat "wiki:" page-name)
-				    (if (string-empty-p desc) page-name desc))))))
+                                    (if (string-empty-p desc) page-name desc))))))
 
 ;;;###autoload
 (defun org-glaux-insert-select-link ()
   "Insert a Wiki link at point for a existing page."
   (interactive)
-  (org-glaux--select
-   (lambda (wiki-path)
-     (insert
-      (org-glaux--make-link wiki-path
-			    (read-string
-			     "Optional description (default: page's title): "))))))
+  (let ((page-wpath (org-glaux--select 'identity))
+        (desc (read-string
+               "Optional description: "
+               (when (use-region-p)
+                 (buffer-substring-no-properties
+                  (region-beginning)
+                  (region-end))))))
+    (save-excursion
+      (when (use-region-p) (delete-region (region-beginning) (region-end)))
+      (insert (org-glaux--make-link page-wpath desc)))))
 
 ;;;; Miscellaneous
 
@@ -755,7 +761,8 @@ Optional arguments TITLE and DATE."
       ;; replace '%n' by page title
       ((text1 (replace-regexp-in-string
 	       "%n"
-	       (or title (file-name-base buffer-file-name))
+	       (or title
+		  (when buffer-file-name (file-name-base buffer-file-name)))
 	       org-glaux-template))
        ;; Replace %d by current date in the format %Y-%m-%d
        (text2 (replace-regexp-in-string
@@ -799,14 +806,15 @@ navigation history stack."
 	(dest-buffer)
 	(cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
-    (when (and (org-glaux--is-buffer-in (current-buffer))
+    (when (and (org-glaux--wiki-buffer-p (current-buffer))
 	     (not no-history?))
       (push cur-buf-fpath org-glaux--page-history))
     ;; register & commit into vcs (if in follow mode)
-    (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow")
+    (when (org-glaux--wiki-buffer-p (current-buffer))
+      (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow"))
     ;; save current buffer if it's customized so
     (when (and org-glaux-save-on-follow
-	     (org-glaux--is-buffer-in (current-buffer)))
+	     (org-glaux--wiki-buffer-p (current-buffer)))
       (save-buffer))
     (if (file-exists-p page-fpath)
 	;; if the page exists, open it
@@ -875,6 +883,26 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 		    wpath-list)
 	  (push page-path back-links))))))
 
+
+(defun org-glaux--positive-broken-links-by-page ()
+  "Return an alist of (fpath . broken-count) by wiki page.
+
+Only wiki pages having broken-links > 0 are in the alist."
+  (cl-remove-if
+   (lambda (entry)
+     (equal 0 (cdr entry)))
+   (mapcar
+    (lambda (entry)
+      (let ((f (car entry))
+	    (l (cdr entry)))
+	(cons f
+	      (length (cl-remove-if
+		       #'file-exists-p
+		       (mapcar
+			(lambda (w) (org-glaux--wiki-path-fpath w f) )
+			l))))))
+    (org-glaux--get-all-links-by-page "wiki"))))
+
 ;;;; Internal -- Stats
 
 ;;;###autoload
@@ -882,75 +910,83 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
   "Show current wiki statistics."
   (interactive)
   (let ((bname "*org-glaux stats*")
-	(progress-reporter (make-progress-reporter "Computing wiki statistics..." 0 20)))
+	      (progress-reporter (make-progress-reporter "Computing wiki statistics..." 0 20)))
     (save-excursion
       ;; clean old stats
       (when (get-buffer bname)
-	(kill-buffer bname))
+	      (kill-buffer bname))
       (switch-to-buffer bname)
       (org-mode)
       (org-glaux--insert-header "Wiki statistics")
       (let* ((wlcbp (progn (progress-reporter-update progress-reporter 1)
-			   (org-glaux--get-all-links-count-by-page "wiki"))))
-	(org-insert-heading)
-	;; Pages
-	(insert "Pages Stats\n")
-	(insert (format "  - Pages count: %d" (length wlcbp)))
-	(org-insert-heading)
-	(insert "Links Stats\n")
-	;; Wiki links
-	(org-insert-subheading nil)
-	(insert "Internal Links Stats\n")
-	(insert (format "  - Total wiki links: %d\n" (progn (progress-reporter-update progress-reporter 2)
-							    (apply '+ wlcbp))))
-	(insert (format "  - Wiki links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
-			(progn (progress-reporter-update progress-reporter 3)
-			       (seq-min wlcbp))
-			(progn (progress-reporter-update progress-reporter 4)
-			       (org-glaux--get-median-links-by-page nil wlcbp))
-			(progn (progress-reporter-update progress-reporter 5)
-			       (org-glaux--get-avg-links-by-page nil wlcbp))
-			(progn (progress-reporter-update progress-reporter 6)
-			       (seq-max wlcbp)))))
+			                     (org-glaux--get-all-links-count-by-page "wiki")))
+	           (pblbp (progn (progress-reporter-update progress-reporter 1) (org-glaux--positive-broken-links-by-page))))
+	      (org-insert-heading)
+	      ;; Pages
+	      (insert "Pages Stats\n")
+	      (insert (format "  - Pages count: %d" (length wlcbp)))
+	      (org-insert-heading)
+	      (insert "Links Stats\n")
+	      ;; Wiki links
+	      (org-insert-subheading nil)
+	      (insert "Internal Links Stats\n")
+	      (insert (format "  - Total wiki links: %d\n" (progn (progress-reporter-update progress-reporter 2)
+							                                              (apply '+ wlcbp))))
+	      (insert (format "  - Wiki links by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
+			                  (progn (progress-reporter-update progress-reporter 3)
+			                         (seq-min wlcbp))
+			                  (progn (progress-reporter-update progress-reporter 4)
+			                         (org-glaux--get-median-links-by-page nil wlcbp))
+			                  (progn (progress-reporter-update progress-reporter 5)
+			                         (org-glaux--get-avg-links-by-page nil wlcbp))
+			                  (progn (progress-reporter-update progress-reporter 6)
+			                         (seq-max wlcbp))))
+	      (insert (format "  - Top %d page with the most broken links\n" 10))
+	      (mapc (lambda (entry)
+		            (insert (format "    - %4d broken link(s): [[wiki:%s]]\n"
+				                        (cdr entry)
+				                        (car entry))))
+	            (org-glaux--stats-top-broken-links-count-files 10 pblbp)))
       (let* ((url-lcbp  (progn (progress-reporter-update progress-reporter 7)
-			       (org-glaux--get-all-links-count-by-page "https" "http"))))
-	;; External links
-	(org-insert-heading)
-	(insert "External Links Stats\n")
-	(insert (format "  - Total url: %d\n" (progn (progress-reporter-update progress-reporter 8)
-						     (apply '+ url-lcbp))))
-	(insert (format "  - Url(s) by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
-			(progn (progress-reporter-update progress-reporter 9)
-			       (seq-min url-lcbp))
-			(progn (progress-reporter-update progress-reporter 10)
-			       (org-glaux--get-median-links-by-page nil url-lcbp))
-			(progn (progress-reporter-update progress-reporter 11)
-			       (org-glaux--get-avg-links-by-page nil url-lcbp))
-			(progn (progress-reporter-update progress-reporter 12)
-			       (seq-max url-lcbp)))))
+			                         (org-glaux--get-all-links-count-by-page "https" "http"))))
+	      ;; External links
+	      (org-insert-heading)
+	      (insert "External Links Stats\n")
+	      (insert (format "  - Total url: %d\n" (progn (progress-reporter-update progress-reporter 8)
+						                                         (apply '+ url-lcbp))))
+	      (insert (format "  - Url(s) by page: min.: %d, median: %.1f, avg.: %.2f, max.: %d\n"
+			                  (progn (progress-reporter-update progress-reporter 9)
+			                         (seq-min url-lcbp))
+			                  (progn (progress-reporter-update progress-reporter 10)
+			                         (org-glaux--get-median-links-by-page nil url-lcbp))
+			                  (progn (progress-reporter-update progress-reporter 11)
+			                         (org-glaux--get-avg-links-by-page nil url-lcbp))
+			                  (progn (progress-reporter-update progress-reporter 12)
+			                         (seq-max url-lcbp)))))
       ;; VCS
       (condition-case nil
-	  (progn
-	    (org-glaux--vc-git-install-check)
-	    (progress-reporter-update progress-reporter 13)
-	    (org-insert-heading)
-	    (org-do-promote) ;; promote to level 1
-	    (insert "VCS Stats\n")
-	    (let* ((ecbf (progn (progress-reporter-update progress-reporter 14) (org-glaux--stats-git-edit-count-by-file)))
-		   (ec (progn (progress-reporter-update progress-reporter 15) (org-glaux--stats-git-edits-count ecbf)))
-		   (show-ec (if (> (length ec) 10) 10 (length ec))))
-	      (insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
-			      (progn (progress-reporter-update progress-reporter 16) (seq-min ec))
-			      (progn (progress-reporter-update progress-reporter 17) (org-glaux--stats-git-avg-edit-count-by-file ec))
-			      (progn (progress-reporter-update progress-reporter 18) (org-glaux--stats-git-median-edit-count-by-file ec))
-			      (progn (progress-reporter-update progress-reporter 19) (seq-max ec))))
-	      (insert (format "  - Top %d most edited pages\n" show-ec))
-	      (mapc (lambda (entry)
-		      (insert (format "    - %4d edit(s): ~%s~\n"
-				      (cdr entry)
-				      (file-relative-name (car entry) org-glaux-location))))
-		    (org-glaux--stats-git-top-edit-count-files show-ec ecbf))))
-	(org-glaux--vc-git-not-installed nil))
+	        (progn
+	          (org-glaux--vc-git-install-check)
+	          (progress-reporter-update progress-reporter 13)
+	          (org-insert-heading)
+	          (org-do-promote) ;; promote to level 1
+	          (insert "VCS Stats\n")
+	          (let* ((ecbf (progn (progress-reporter-update progress-reporter 14) (org-glaux--stats-git-edit-count-by-file)))
+		               (ec (progn (progress-reporter-update progress-reporter 15) (org-glaux--stats-git-edits-count ecbf))))
+	            (insert (format "  - Edits by file: min.: %d, median: %.1f, avg: %.2f, max.: %d\n"
+			                        (progn (progress-reporter-update progress-reporter 16) (seq-min ec))
+			                        (progn (progress-reporter-update progress-reporter 17) (org-glaux--stats-git-avg-edit-count-by-file ec))
+			                        (progn (progress-reporter-update progress-reporter 18) (org-glaux--stats-git-median-edit-count-by-file ec))
+			                        (progn (progress-reporter-update progress-reporter 19) (seq-max ec))))
+	            (insert (format "  - Top %d most edited pages\n" 10))
+	            (mapc (lambda (entry)
+		                  (insert (format "    - %4d edit(s): [[%s]]\n"
+				                              (cdr entry)
+                                      (if (string-suffix-p ".org" (car entry))
+                                          (concat "wiki:" (org-glaux--file-wiki-path (car entry)))
+				                                (concat "file:" (car entry))))))
+		                (org-glaux--stats-git-top-edit-count-files 10 ecbf))))
+	      (org-glaux--vc-git-not-installed nil))
       (progress-reporter-done progress-reporter))))
 
 ;;;;; Internal -- Stats -- Edits Count
@@ -995,13 +1031,30 @@ EDITS-COUNT and ECBF (edits-count by file) are computed when needed."
     (org-glaux--calc-median edits-count)))
 
 (defun org-glaux--stats-git-top-edit-count-files (n &optional ecbf)
-  "Return an alist (file-path . edits count) of the N most edits files.
+  "Return a sorted alist (file-path . edits count) of the top N edits files.
 
-If N is nil, return all files in edits count order.
+If N is nil, return all files sorted in descending edits count order.
 ECBF (edits-count by file) is computed when needed."
-  (let* ((ecbf (or ecbf (org-glaux--stats-git-edit-count-by-file)))
-	 (len (length ecbf))
-	 (sorted (sort ecbf (lambda (a b) (> (cdr a) (cdr b))))))
+  (org-glaux--stats-top-count-files n #'org-glaux--stats-git-edit-count-by-file ecbf))
+
+(defun org-glaux--stats-top-broken-links-count-files (n &optional pblbp)
+  "Return the top N wiki page having the most broken links.
+
+The result consists of a sorted alist (wiki-path . broken-links-count).
+If N is nil, return all files in descending broken links count order.
+PBLBP (positive broken links by page) is computed when needed."
+  (mapcar (lambda (entry) (cons (org-glaux--file-wiki-path (car entry)) (cdr entry)))
+          (org-glaux--stats-top-count-files n #'org-glaux--positive-broken-links-by-page pblbp)))
+
+(defun org-glaux--stats-top-count-files (n f &optional alist-by-page)
+  "Return the top N entry (file-path . count) having the highest count.
+
+If N is nil, return all files in descending count order.
+If precomputed ALIST-BY-PAGE is not provided, compute it by funcall F
+with no argument."
+  (let* ((alist-by-page (or alist-by-page (funcall f)))
+	 (len (length alist-by-page))
+	 (sorted (sort alist-by-page (lambda (a b) (> (cdr a) (cdr b))))))
     (if n
 	(butlast sorted (- len n))
       sorted)))
@@ -1081,7 +1134,6 @@ Duplicated links are removed if RMDUP is non-nil."
     (signal 'org-glaux--file-error (list "source file doesn't exist" src-fpath)))
 
   ;; could fail if 2nd arg is nil (relative path)
-  (message "%s" dest-fpath)
   (make-directory (file-name-directory dest-fpath) t)
   (rename-file src-fpath dest-fpath 0))
 
@@ -1113,7 +1165,7 @@ The following links are absolute.
 	   (file-name-as-directory (file-name-base src-fpath-page))
 	   (file-relative-name (buffer-file-name b) src-fpath-assets-dir)))))
      (cl-remove-if-not
-      (lambda (b) (and (org-glaux--is-buffer-in b)
+      (lambda (b) (and (org-glaux--wiki-buffer-p b)
 		(file-in-directory-p (buffer-file-name b) src-fpath-assets-dir)))
       (buffer-list)))
 
@@ -1160,7 +1212,7 @@ The following links are absolute.
 	   ;; test if buffer file has extension .org
 	   (string-suffix-p ".org" fpath)
 	   ;; test if buffer file is under current wiki location
-	   (org-glaux--is-buffer-in buffer))))
+	   (org-glaux--wiki-buffer-p buffer))))
    (buffer-list)))
 
 (defun org-glaux--pages-list ()
@@ -1208,10 +1260,11 @@ The following links are absolute.
 	  'org-link)
       ;; url broken or FIXME: connection error...
       (error 'org-warning))))
+
 ;;;; Internal -- Make dir
 (defun org-glaux--assets-buffer-make-dir ()
   "Create asset directory of current buffer page if it doesn't exit."
-  (if (not (org-glaux--is-buffer-in (current-buffer)))
+  (if (not (org-glaux--wiki-buffer-p (current-buffer)))
       (error "Not in a wiki page")
     (org-glaux--assets-make-dir (file-name-base buffer-file-name))))
 
@@ -1322,13 +1375,14 @@ Directory (ends with a slash \"/\"):
   "Convert a page's WIKI-PATH to corresponding html filepath."
   (org-glaux--replace-extension (org-glaux--wiki-path-fpath wiki-path) "html"))
 ;;;; Internal -- Predicate
-(defun org-glaux--is-file-in (fpath)
+(defun org-glaux--wiki-file-p (fpath)
   "Return non-nil if FPATH is an org-glaux file under `org-glaux-location'."
-  (file-in-directory-p fpath (expand-file-name org-glaux-location)))
+  (when fpath
+    (file-in-directory-p fpath (expand-file-name org-glaux-location))))
 
-(defun org-glaux--is-buffer-in (buffer)
+(defun org-glaux--wiki-buffer-p (buffer)
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
-  (org-glaux--is-file-in (buffer-file-name buffer)))
+  (org-glaux--wiki-file-p (buffer-file-name buffer)))
 
 ;;;; Internal -- Publish
 (defun org-glaux--make-org-publish-plist (org-exporter)
@@ -1399,7 +1453,7 @@ Use PROMPT if it is non-nil."
 "Filter FILES according to `org-glaux-vc-*' settings.
 
 See  `org-glaux-vc-ignored-files-glob'."
-(let ((wiki-files (cl-remove-if-not 'org-glaux--is-file-in
+(let ((wiki-files (cl-remove-if-not 'org-glaux--wiki-file-p
 				    (-flatten
 				     (mapcar
 				      (lambda (f)
@@ -1490,7 +1544,7 @@ Should be called after `org-glaux--vc-git-register-files'"
 (defun org-glaux--vc-git-commit-on-save ()
 "Commit change into git on save."
 (when (and (member org-glaux-vc-commit-when '(save close+save follow+save close+follow+save))
-	 (org-glaux--is-buffer-in (current-buffer)))
+	 (org-glaux--wiki-buffer-p (current-buffer)))
   (org-glaux--vc-git-commit-files
    (list buffer-file-name)
    'save
@@ -1508,20 +1562,74 @@ Should be called after `org-glaux--vc-git-register-files'"
 	     (org-glaux--vc-git-get-vc-files)))))
 
 (defun org-glaux--vc-git-get-vc-files ()
-"Return all files in the working tree under git VCS."
-(let ((default-directory org-glaux-location))
-  ;; If there is no yet any commit, commands below will fail
-  ;; First check if it's the case or not with git branch -a
-  (when (process-lines vc-git-program "branch" "-a")
-    (mapcar (lambda (rel-fpath) (expand-file-name (concat org-glaux-location "/" rel-fpath)))
-	    (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
-	      (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
+  "Return all files in the working tree under git VCS."
+  (let ((default-directory org-glaux-location))
+    ;; If there is no yet any commit, commands below will fail
+    ;; First check if it's the case or not with git branch -a
+    (when (process-lines vc-git-program "branch" "-a")
+      (mapcar (lambda (rel-fpath)
+                (expand-file-name (concat org-glaux-location
+                                          "/"
+                                          (org-glaux--decode-escaped-to-utf8
+                                           (replace-regexp-in-string "^\"\\(.*?\\)\"$" "\\1"
+                                                                     rel-fpath)))))
+	            (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
+	              (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
 
 ;;;; Internal -- Miscellaneous
+(defun org-glaux--chop-string (string &optional separators omit-nulls keep-sep)
+  "Split STRING into substrings bounded by matches for SEPARATORS."
+  (let* ((keep-nulls (not (if separators omit-nulls t)))
+         (rexp (or separators split-string-default-separators))
+         (start 0)
+         this-start this-end
+         notfirst
+         (list nil)
+         (push-one
+          (lambda ()
+            (when (or keep-nulls (< this-start this-end))
+              (let ((this (substring string this-start this-end)))
+                (when (or keep-nulls (> (length this) 0))
+                  (push this list)))))))
+    (while (and (string-match
+               rexp string
+               (if (and notfirst
+                      (= start (match-beginning 0))
+                      (< start (length string)))
+                   (1+ start) start))
+              (< start (length string)))
+      (setq notfirst t)
+      (setq this-start start this-end (match-beginning 0)
+            start (match-end 0))
+      (funcall push-one)
+      (when keep-sep
+        (push (match-string 0 string) list)))
+    (setq this-start start this-end (length string))
+    (funcall push-one)
+    (nreverse list)))
+
+(defun org-glaux--decode-escaped-to-utf8 (str)
+  (decode-coding-string
+   (apply
+    #'concat
+    (mapcar
+     (lambda (ns)
+       (if (number-or-marker-p ns)
+           (unibyte-string ns)
+         ns))
+     (mapcar
+      (lambda (s)
+        (if (string-prefix-p "\\" s)
+            (string-to-number (substring s 1) 8)
+          s))
+      (org-glaux--chop-string str "\\\\[0-7]\\{3\\}" t t))))
+   'utf-8))
+
+;; TODO add progress bar
 (defun org-glaux--batch-execute-list (f size data-list)
   "Execute function F per batch of DATA-LIST with size SIZE."
   (let* ((sublist (butlast data-list (- (length data-list) size)))
-	 (offset size))
+	       (offset size))
     (while sublist
       (funcall f sublist)
       (setq sublist (butlast (nthcdr offset data-list) (- (length data-list) size offset)))
@@ -1542,14 +1650,14 @@ Should be called after `org-glaux--vc-git-register-files'"
 ;; Hyperlinks to other wiki pages.
 ;; wiki:<wiki-path> or [[wiki:<wiki-path>][<description>]]
 (org-link-set-parameters "wiki"
-			 :follow #'org-glaux--wiki-follow
-			 :export #'org-glaux--wiki-export
-			 :face #'org-glaux--wiki-face)
+			                   :follow #'org-glaux--wiki-follow
+			                   :export #'org-glaux--wiki-export
+			                   :face #'org-glaux--wiki-face)
 
 ;;;; Http link
 ;; (org-link-set-parameters "http"
 ;;   			 :face #'org-glaux--url-face)
-;; 
+;;
 ;; (org-link-set-parameters "https"
 ;;   			 :face #'org-glaux--url-face)
 
