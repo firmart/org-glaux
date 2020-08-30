@@ -841,18 +841,17 @@ Argument FORMAT format to export."
     (html (format "<a href='%s'>%s</a>" (file-relative-name (org-glaux--page->html-file wiki-path) ".") (or desc wiki-path)))
     (ascii (format "%s (%s)" (or desc wiki-path) wiki-path))
     (latex (format "\\href{%s}{%s}"
-		   (file-relative-name
-		    (expand-file-name wiki-path org-glaux-location) ".")
-		   (or desc wiki-path)))))
+		               (file-relative-name
+		                (expand-file-name wiki-path org-glaux-location) ".")
+		               (or desc wiki-path)))))
 ;;;;; Links Utilities
-;; TODO close file if it wasn't opened
 (defun org-glaux--get-file-links (fpath &rest link-type)
   "Return all links of type LINK-TYPE appearing in file FPATH."
-  (with-current-buffer (find-file-noselect fpath)
-    (org-element-map (org-element-parse-buffer) 'link
-      (lambda (link)
-	(when (member (org-element-property :type link) link-type)
-	  (org-element-property :path link))))))
+  (with-temp-buffer (insert-file-contents fpath)
+                    (org-element-map (org-element-parse-buffer) 'link
+                      (lambda (link)
+	                      (when (member (org-element-property :type link) link-type)
+	                        (org-element-property :path link))))))
 
 (defun org-glaux--get-all-links-by-page (&rest link-type)
   "Return an alist (PAGE-FPATH . LINK-TYPE list)."
@@ -894,18 +893,19 @@ Only wiki pages having broken-links > 0 are in the alist."
    (mapcar
     (lambda (entry)
       (let ((f (car entry))
-	    (l (cdr entry)))
-	(cons f
-	      (length (cl-remove-if
-		       #'file-exists-p
-		       (mapcar
-			(lambda (w) (org-glaux--wiki-path-fpath w f) )
-			l))))))
+	          (l (cdr entry)))
+	      (cons f
+	            (length (cl-remove-if
+		                   #'file-exists-p
+		                   (mapcar
+			                  (lambda (w) (org-glaux--wiki-path-fpath w f) )
+			                  l))))))
     (org-glaux--get-all-links-by-page "wiki"))))
 
 ;;;; Internal -- Stats
 
 ;;;###autoload
+;; TODO show broken file: link
 (defun org-glaux--show-wiki-stats ()
   "Show current wiki statistics."
   (interactive)
@@ -1568,17 +1568,24 @@ Should be called after `org-glaux--vc-git-register-files'"
     ;; First check if it's the case or not with git branch -a
     (when (process-lines vc-git-program "branch" "-a")
       (mapcar (lambda (rel-fpath)
-                (expand-file-name (concat org-glaux-location
-                                          "/"
-                                          (org-glaux--decode-escaped-to-utf8
-                                           (replace-regexp-in-string "^\"\\(.*?\\)\"$" "\\1"
-                                                                     rel-fpath)))))
+                (expand-file-name
+                 ;; The command "git ls-tree -r <branch> --name-only" returns
+                 ;; escaped string surrounded by double-quote if the string contains
+                 ;; Unicode. We convert it to `'utf-8'.
+                 (concat org-glaux-location
+                         "/"
+                         (org-glaux--decode-escaped-to-utf8
+                          (replace-regexp-in-string "^\"\\(.*?\\)\"$" "\\1"
+                                                    rel-fpath)))))
 	            (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
 	              (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
 
 ;;;; Internal -- Miscellaneous
+;; from https://emacs.stackexchange.com/a/5730/23697
 (defun org-glaux--chop-string (string &optional separators omit-nulls keep-sep)
-  "Split STRING into substrings bounded by matches for SEPARATORS."
+  "Split STRING into substrings bounded by match for SEPARATORS.
+OMIT-NULLS behaves the same as in `split-string'. If KEEP-SEP is non-nil, keep
+the separators."
   (let* ((keep-nulls (not (if separators omit-nulls t)))
          (rexp (or separators split-string-default-separators))
          (start 0)
@@ -1609,6 +1616,7 @@ Should be called after `org-glaux--vc-git-register-files'"
     (nreverse list)))
 
 (defun org-glaux--decode-escaped-to-utf8 (str)
+  "Decode an escaped string STR to utf-8 (e.g. \"\\303\\273\" => \"û\")."
   (decode-coding-string
    (apply
     #'concat
