@@ -45,7 +45,7 @@
 
 (defgroup org-glaux nil
   "Org-glaux Settings"
-  :group 'tools
+  :group 'org
   :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux-location-list '("~/org/wiki")
@@ -803,23 +803,24 @@ come back to it.
 If NO-HISTORY? is non-nil, do not push the `current-buffer' to
 navigation history stack."
   (let ((page-fpath (org-glaux--wiki-path-fpath wiki-path))
-	(dest-buffer)
-	(cur-buf-fpath buffer-file-name))
+	      (dest-buffer)
+	      (cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
     (when (and (org-glaux--wiki-buffer-p (current-buffer))
-	     (not no-history?))
+	           (not no-history?))
       (push cur-buf-fpath org-glaux--page-history))
     ;; register & commit into vcs (if in follow mode)
-    (when (org-glaux--wiki-buffer-p (current-buffer))
+    (when (and (org-glaux--wiki-buffer-p (current-buffer))
+             (buffer-modified-p (current-buffer)))
       (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow"))
     ;; save current buffer if it's customized so
     (when (and org-glaux-save-on-follow
-	     (org-glaux--wiki-buffer-p (current-buffer)))
+	           (org-glaux--wiki-buffer-p (current-buffer)))
       (save-buffer))
     (if (file-exists-p page-fpath)
-	;; if the page exists, open it
-	(progn (setq dest-buffer (find-file page-fpath))
-	       (when org-glaux-default-read-only (read-only-mode t)))
+	      ;; if the page exists, open it
+	      (progn (setq dest-buffer (find-file page-fpath))
+	             (when org-glaux-default-read-only (read-only-mode t)))
       ;; if the page doesn't exist, create it
       (make-directory (file-name-directory page-fpath) t)
       (setq dest-buffer (find-file page-fpath))
@@ -829,7 +830,7 @@ navigation history stack."
       (save-buffer)
       ;; refontify previous buffer as the wiki link exist now
       (with-current-buffer (find-file-noselect cur-buf-fpath)
-	(font-lock-flush))
+	      (font-lock-flush))
       (org-glaux--assets-make-dir page-fpath))
     dest-buffer))
 
