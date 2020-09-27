@@ -714,12 +714,10 @@ Note: This command requires Python3 installed."
   "Register and commit all relevant files of the full wiki."
   (interactive)
   ;; move to index to obtain wiki-based configuration on ignored glob
-  (let ((index (org-glaux--wiki-path-fpath org-glaux-index-file-basename)))
-    (with-current-buffer (find-file-noselect index)
-      (org-glaux--vc-git-commit-files
-       (directory-files-recursively org-glaux-location "^.*$")
-       'manual
-       "org-glaux: manually commit relevant files of the full wiki.")))
+  (org-glaux--vc-git-commit-files
+   (directory-files-recursively org-glaux-location "^.*$")
+   'manual
+   "org-glaux: manually commit relevant files of the full wiki.")
   (save-excursion
     (switch-to-buffer "*vc*")))
 
@@ -1515,32 +1513,35 @@ Should be called after `org-glaux--vc-git-register-files'"
 
 - The CONTEXT corresponds to the variable `org-glaux-vc-commit-when'.
 - This function checks additionally possible errors."
-  (when (and (equal org-glaux-vc-backend 'git)
-	         ;; manually commit is always accepted
-	         (or (member context (list 'manual org-glaux-vc-commit-when))
-	            (when (equal org-glaux-vc-commit-when 'close+follow)
-		            (member context '(close follow)))
-	            (when (equal org-glaux-vc-commit-when 'follow+save)
-		            (member context '(follow save)))
-	            (when (equal org-glaux-vc-commit-when 'close+save)
-		            (member context '(close save)))
-	            (when (equal org-glaux-vc-commit-when 'close+follow+save)
-		            (member context '(close follow save)))))
-    (condition-case err
-	      (progn
-	        (org-glaux--vc-git-install-check)
-	        (org-glaux-vc-git-init-root)
-	        (let ((register-count (+ (org-glaux--vc-git-register-files files)
-				                           ;; unconditionally remove removed files
-				                           (org-glaux--vc-git-register-removed-files))))
-	          (when (> register-count 0)
-	            (org-glaux--vc-git-commit message)
-	            (message "%s" message))))
-      (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
-      (error (display-warning 'org-glaux
-			                        (format "org-glaux: unable to register & commit files in the context %s : %s"
-				                              (symbol-name context)
-				                              (error-message-string err)))))))
+
+  (let ((index (org-glaux--wiki-path-fpath org-glaux-index-file-basename)))
+    (with-current-buffer (find-file-noselect index)
+      (when (and (equal org-glaux-vc-backend 'git)
+	             ;; manually commit is always accepted
+	             (or (member context (list 'manual org-glaux-vc-commit-when))
+	                (when (equal org-glaux-vc-commit-when 'close+follow)
+		                (member context '(close follow)))
+	                (when (equal org-glaux-vc-commit-when 'follow+save)
+		                (member context '(follow save)))
+	                (when (equal org-glaux-vc-commit-when 'close+save)
+		                (member context '(close save)))
+	                (when (equal org-glaux-vc-commit-when 'close+follow+save)
+		                (member context '(close follow save)))))
+        (condition-case err
+	          (progn
+	            (org-glaux--vc-git-install-check)
+	            (org-glaux-vc-git-init-root)
+	            (let ((register-count (+ (org-glaux--vc-git-register-files files)
+				                               ;; unconditionally remove removed files
+				                               (org-glaux--vc-git-register-removed-files))))
+	              (when (> register-count 0)
+	                (org-glaux--vc-git-commit message)
+	                (message "%s" message))))
+          (org-glaux--vc-git-not-installed (display-warning 'org-glaux (error-message-string err)))
+          (error (display-warning 'org-glaux
+			                            (format "org-glaux: unable to register & commit files in the context %s : %s"
+				                                  (symbol-name context)
+				                                  (error-message-string err)))))))))
 
 (defun org-glaux--vc-git-commit-on-save ()
   "Commit change into git on save."
