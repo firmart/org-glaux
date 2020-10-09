@@ -464,14 +464,21 @@ The page is created if it doesn't exist."
   "Insert at point a file link to a current page's asset file.
 The link type file is opened with Emacs."
   (interactive)
-  (org-glaux--assets-select
-   (lambda (file)
-     (insert
-      (org-link-make-string
-       (format "file:%s/%s"
-	             (file-name-base buffer-file-name)
-	             (file-name-nondirectory file))
-       (read-string "Description: "))))))
+  (let ((asset-link (org-glaux--assets-select
+                     (lambda (file)
+                       (format "file:%s/%s"
+	                             (file-name-base buffer-file-name)
+	                             (file-name-nondirectory file)))))
+        (desc (read-string "Description: "
+                           (when (use-region-p)
+                             (buffer-substring-no-properties
+                              (region-beginning)
+                              (region-end))))))
+
+    (save-excursion
+      (when (use-region-p) (delete-region (region-beginning) (region-end)))
+      (insert
+       (org-link-make-string asset-link desc)))))
 
 ;;;###autoload
 (defun org-glaux-insert-download ()
@@ -832,6 +839,7 @@ navigation history stack."
       (org-glaux--assets-make-dir page-fpath))
     dest-buffer))
 
+;; TODO latex export: if description is a wikipath, sanitize it (e.g. escape "_")
 (defun org-glaux--wiki-export (wiki-path desc format)
   "Export a wiki page WIKI-PATH from Org files.
 Argument DESC wiki link description.
@@ -997,7 +1005,9 @@ Only wiki pages having broken-links > 0 are in the alist."
     (when rm-files
       (org-glaux--vc-git-register-removed-files)
       (org-glaux--vc-git-commit "org-glaux: automatic commit removed file(s) before stats."))
-    (mapcar (lambda (f) (cons f (org-glaux--stats-git-file-edit-count f))) (org-glaux--vc-git-get-vc-files))))
+    (mapcar (lambda (f)
+              (cons f (org-glaux--stats-git-file-edit-count f)))
+            (org-glaux--vc-git-get-vc-files))))
 
 (defun org-glaux--stats-git-file-edit-count (fpath)
   "Return git commit count of FPATH *in the working tree*.
@@ -1005,7 +1015,7 @@ Only wiki pages having broken-links > 0 are in the alist."
 Known bug: filename containing special character fails this function.
 FIXME: replace them with unicode."
   (let ((default-directory org-glaux-location))
-    (length (process-lines vc-git-program "log" "--oneline" fpath))))
+    (length (process-lines vc-git-program "log" "--oneline" (string-as-unibyte fpath)))))
 
 (defun org-glaux--stats-git-edits-count (ecbf)
   "Given ECBF (edits-count by file), compute a list of edits count."
@@ -1617,22 +1627,22 @@ the separators."
     (funcall push-one)
     (nreverse list)))
 
+;; FIXME: there is probably a simpler way
 (defun org-glaux--decode-escaped-to-utf8 (str)
   "Decode an escaped string STR to utf-8 (e.g. \"\\303\\273\" => \"û\")."
   (decode-coding-string
    (apply
     #'concat
     (mapcar
-     (lambda (ns)
-       (if (number-or-marker-p ns)
-           (unibyte-string ns)
-         ns))
-     (mapcar
-      (lambda (s)
-        (if (string-prefix-p "\\" s)
-            (string-to-number (substring s 1) 8)
-          s))
-      (org-glaux--chop-string str "\\\\[0-7]\\{3\\}" t t))))
+     (lambda (s)
+       (let ((ns (if (and (not (string-equal "\\\\" s))
+                        (string-prefix-p "\\" s))
+                     (string-to-number (substring s 1) 8)
+                   s)))
+         (if (number-or-marker-p ns)
+             (unibyte-string ns)
+           ns)))
+     (org-glaux--chop-string str "\\\\[0-7]\\{3\\}" t t)))
    'utf-8))
 
 ;; TODO add progress bar
