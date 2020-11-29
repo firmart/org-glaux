@@ -464,21 +464,22 @@ The page is created if it doesn't exist."
   "Insert at point a file link to a current page's asset file.
 The link type file is opened with Emacs."
   (interactive)
-  (let ((asset-link (org-glaux--assets-select
-                     (lambda (file)
-                       (format "file:%s/%s"
-	                             (file-name-base buffer-file-name)
-	                             (file-name-nondirectory file)))))
-        (desc (read-string "Description: "
-                           (when (use-region-p)
-                             (buffer-substring-no-properties
-                              (region-beginning)
-                              (region-end))))))
+  (let* ((file (org-glaux--assets-select #'identity))
+         (asset-link (format "file:%s/%s"
+	                           (file-name-base buffer-file-name)
+	                           (file-name-nondirectory file)))
+         (desc (read-string "Description: "
+                            (when (use-region-p)
+                              (buffer-substring-no-properties
+                               (region-beginning)
+                               (region-end))))))
 
     (save-excursion
       (when (use-region-p) (delete-region (region-beginning) (region-end)))
       (insert
-       (org-link-make-string asset-link desc)))))
+       (org-link-make-string asset-link (if (string-empty-p desc)
+                                            (file-name-nondirectory file)
+                                          desc))))))
 
 ;;;###autoload
 (defun org-glaux-insert-download ()
@@ -487,8 +488,15 @@ Note: This function is synchronous and blocks Emacs."
   (interactive)
   (org-glaux--assets-download-hof
    (lambda (output-file)
-     (save-excursion (insert (format "[[file:%s/%s][%s]]"
-				                             (file-name-base buffer-file-name) output-file output-file))))))
+     (let ((desc (read-string "Description: "
+                              (when (use-region-p)
+                                (buffer-substring-no-properties
+                                 (region-beginning)
+                                 (region-end))))))
+       (save-excursion
+         (when (use-region-p) (delete-region (region-beginning) (region-end)))
+         (insert (format "[[file:%s/%s][%s]]"
+				                 (file-name-base buffer-file-name) output-file desc)))))))
 
 ;;;###autoload
 (defun org-glaux-insert-new-link ()
@@ -812,15 +820,15 @@ navigation history stack."
 	      (cur-buf-fpath buffer-file-name))
     ;; push current buffer in page history stack
     (when (and (org-glaux--wiki-buffer-p (current-buffer))
-	           (not no-history?))
+	             (not no-history?))
       (push cur-buf-fpath org-glaux--page-history))
     ;; register & commit into vcs (if in follow mode)
     (when (and (org-glaux--wiki-buffer-p (current-buffer))
-             (buffer-modified-p (current-buffer)))
+               (buffer-modified-p (current-buffer)))
       (org-glaux--vc-git-commit-files (list buffer-file-name) 'follow "org-glaux: automatic commit on page follow"))
     ;; save current buffer if it's customized so
     (when (and org-glaux-save-on-follow
-	           (org-glaux--wiki-buffer-p (current-buffer)))
+	             (org-glaux--wiki-buffer-p (current-buffer)))
       (save-buffer))
     (if (file-exists-p page-fpath)
 	      ;; if the page exists, open it
@@ -831,6 +839,7 @@ navigation history stack."
       (setq dest-buffer (find-file page-fpath))
       ;; remove possible legacy buffer content
       (delete-region (point-min) (point-max))
+      ;; TODO obtain link description
       (org-glaux--insert-header)
       (save-buffer)
       ;; refontify previous buffer as the wiki link exist now
@@ -1111,6 +1120,31 @@ Duplicated links are removed if RMDUP is non-nil."
 	           sortl))
 	       (float 2)))))
 
+;;;; Internal -- Face
+(defun org-glaux--generic-face (fpath)
+  ;; Do not connect to remote files
+  (unless (file-remote-p fpath)
+    (if (file-exists-p fpath)
+	      'org-link
+	    ;; file link broken
+	    'org-warning)))
+
+(defun org-glaux--wiki-face (wiki-path)
+  "Dynamic face for WIKI-PATH link."
+  (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
+    (org-glaux--generic-face fpath)))
+
+;; FIXME: cannot be used for now
+(defun org-glaux--url-face (url)
+  "Dynamic face for URL links."
+  (let ((https+url (if (string-match "https?://" url)
+		                   url
+		                 (concat "https://" url))))
+    (condition-case nil
+	      (when (url-file-exists-p https+url)
+	        'org-link)
+      ;; url broken or FIXME: connection error...
+      (error 'org-warning))))
 ;;;; Internal -- Files
 
 
@@ -1249,26 +1283,6 @@ The following links are absolute.
        #'file-directory-p
        (directory-files-recursively org-glaux-location "" t))
       ignored-regexs))))
-
-(defun org-glaux--wiki-face (wiki-path)
-  "Dynamic face for WIKI-PATH link."
-  (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
-    (unless (file-remote-p fpath) ;; Do not connect to remote files
-      (if (file-exists-p fpath)
-	        'org-link
-	      ;; file link broken
-	      'org-warning))))
-
-(defun org-glaux--url-face (url)
-  "Dynamic face for URL links."
-  (let ((https+url (if (string-match "https?://" url)
-		                   url
-		                 (concat "https://" url))))
-    (condition-case nil
-	      (when (url-file-exists-p https+url)
-	        'org-link)
-      ;; url broken or FIXME: connection error...
-      (error 'org-warning))))
 
 ;;;; Internal -- Make dir
 (defun org-glaux--assets-buffer-make-dir ()
@@ -1423,7 +1437,7 @@ Use PROMPT if it is non-nil."
   "Select an asset of the current page and invokes the CALLBACK function on it.
 
 Use PROMPT if it is non-nil."
-  (let ((target (completing-read (or prompt "Wiki pages: ")
+  (let ((target (completing-read (or prompt "Asset: ")
 				                         (org-glaux--assets-page-files
 				                          (file-name-sans-extension buffer-file-name)))))
     (funcall callback (org-glaux--cur-page-assets-file target))))
@@ -1673,6 +1687,9 @@ the separators."
 			                   :follow #'org-glaux--wiki-follow
 			                   :export #'org-glaux--wiki-export
 			                   :face #'org-glaux--wiki-face)
+
+;;;; File link
+(org-link-set-parameters "file" :face #'org-glaux--generic-face)
 
 ;;;; Http link
 ;; (org-link-set-parameters "http"
