@@ -55,7 +55,10 @@
   :package-version '(org-glaux . "0.1"))
 
 (defcustom org-glaux--assets-dir-suffix "_assets"
-  "List of org-glaux root directories."
+  "Assets' directory name suffix. 
+
+If it is an empty string, assets and sub-wiki pages will be 
+under the same directory."
   :type  'string
   :group 'org-glaux
   :package-version '(org-glaux . "0.3"))
@@ -156,6 +159,7 @@ in index page."
 		(const :tag "always commit manually" :value 'manual))
   :group 'org-glaux
   :package-version '(org-glaux . "0.2"))
+
 ;;;; Python webserver settings
 (defcustom org-glaux-server-port "8000"
   "Default port to server org-glaux static files server."
@@ -175,7 +179,6 @@ in index page."
   :type 'file
   :group 'org-glaux
   :package-version '(org-glaux . "0.1"))
-
 
 ;; Additional publishing options
 (defcustom org-glaux-publish-plist '()
@@ -663,6 +666,13 @@ The html page is created if it doesn't exist yet."
   "Select and open a wiki page."
   (interactive)
   (org-glaux--select #'org-glaux--wiki-follow))
+
+;;;###autoload
+(defun org-glaux-select-asset ()
+  "Select and open a wiki page's asset."
+  (interactive)
+  (let ((target (completing-read  "Wiki assets: " (org-glaux--assets-list))))
+    (org-open-file target)))
 
 ;;;###autoload
 (defun org-glaux-select-root ()
@@ -1234,24 +1244,11 @@ Duplicated links are removed if RMDUP is non-nil."
 ;;       'manual "org-glaux: automatic commit due to file renaming")))
 
 ;;;; Internal -- List
-(defun org-glaux--assets-page-files (dirpath)
-  "Return all asset files from a given page's asset DIRPATH."
-  (org-glaux--assets-make-dir dirpath)
-  (let* ((dir-files (directory-files dirpath nil
-				     ;; exclude ".", "..", "ltximg"
-				     "^\\([^.]\\|\\.[^.]\\|\\.\\..\\|ltximg\\)"))
-	 (org-files (directory-files dirpath nil "\\.org$")))
-    (cl-remove-if
-     (lambda (f) (or (file-directory-p ;; remove directories
-		      (expand-file-name f dirpath))
-	             (cl-some
-		      (lambda (org-file)
-		        ;; remove suffix or prefix of children org-file name
-		        (or (string-prefix-p (file-name-base org-file) f)
-		            ;; exclude auto-generated latex dirs such as _minted-<page-name>
-		            (string-suffix-p (file-name-base org-file) f)))
-		      org-files)))
-     dir-files)))
+(defun org-glaux--assets-page-files (fpath)
+  "Return all assets from a given wiki page's FPATH."
+  (let ((dirpath (org-glaux--page-assets-dir fpath)))
+    (when (file-directory-p dirpath)
+      (directory-files-recursively dirpath "^\\([^.]\\|\\.[^.]\\|\\.\\..\\)")))) 
 
 (defun org-glaux--get-buffers-filename ()
   "Return all org-glaux page buffers filename under `org-glaux-location`."
@@ -1261,11 +1258,11 @@ Duplicated links are removed if RMDUP is non-nil."
      (let* ((fp (buffer-file-name buffer))
 	    (fpath (if fp (expand-file-name fp))))
        ;; test if file exists
-       (and  fpath
-	     ;; test if buffer file has extension .org
-	     (string-suffix-p ".org" fpath)
-	     ;; test if buffer file is under current wiki location
-	     (org-glaux--wiki-buffer-p buffer))))
+       (and fpath
+	    ;; test if buffer file has extension .org
+	    (string-suffix-p ".org" fpath)
+	    ;; test if buffer file is under current wiki location
+	    (org-glaux--wiki-buffer-p buffer))))
    (buffer-list)))
 
 (defun org-glaux--pages-list ()
@@ -1279,6 +1276,20 @@ Duplicated links are removed if RMDUP is non-nil."
     (org-glaux--vc-ignore-files
      (directory-files-recursively org-glaux-location "\\.org$")
      ignored-regexs)))
+
+(defun org-glaux--assets-list ()
+    "Return a list containing all assets under `org-glaux-location`."
+    (org-glaux--init-location)
+    (let ((pages (org-glaux--pages-list))
+	  (ignored-regexs (mapcar
+			   #'org-glaux--glob2regex
+			    org-glaux-vc-ignored-files-glob)))
+	  (org-glaux--vc-ignore-files
+	   (apply #'append
+		  (remove nil
+			  (mapcar #'org-glaux--assets-page-files 
+				  pages)))
+	   ignored-regexs)))
 
 (defun org-glaux--dirs-list ()
   "Return all (sub)-directories under `org-glaux-location'."
@@ -1452,8 +1463,7 @@ Use PROMPT if it is non-nil."
 
 Use PROMPT if it is non-nil."
   (let ((target (completing-read (or prompt "Asset: ")
-				 (org-glaux--assets-page-files
-				  (org-glaux--cur-page-assets-dir)))))
+				 (org-glaux--assets-page-files buffer-file-name))))
     (funcall callback (org-glaux--cur-page-assets-file target))))
 
 ;;;; Internal -- Version control
