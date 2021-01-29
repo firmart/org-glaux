@@ -508,7 +508,7 @@ Note: This function is synchronous and blocks Emacs."
        (save-excursion
          (when (use-region-p) (delete-region (region-beginning) (region-end)))
          (insert (format "[[file:%s/%s][%s]]"
-			 (file-name-base buffer-file-name) output-file desc)))))))
+			 (org-glaux--cur-page-assets-dir) output-file desc)))))))
 
 ;;;###autoload
 (defun org-glaux-insert-new-link ()
@@ -611,10 +611,11 @@ Note: This function is synchronous and blocks Emacs."
 ;;;; Select
 
 ;;;###autoload
-(defun org-glaux-select-asset ()
-  "Open in Emacs a selected asset file of the current page from a menu."
-  (interactive)
-  (org-glaux--assets-select #'org-open-file))
+
+;; (defun org-glaux-select-asset ()
+;;   "Open in Emacs a selected asset file of the current page from a menu."
+;;   (interactive)
+;;   (org-glaux--assets-select #'org-open-file))
 
 ;;;###autoload
 (defun org-glaux-select-assets-dired ()
