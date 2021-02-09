@@ -1,13 +1,13 @@
 ;;; org-glaux.el --- Desktop wiki extension for org-mode -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2020 Firmin Martin
+;; Copyright (C) 2021 Firmin Martin
 
 ;; Author: Firmin Martin
 ;; Maintainer: Firmin Martin
 ;; Version: 0.3
 ;; Keywords: outlines, files, convenience
 ;; URL: https://www.github.com/firmart/org-glaux
-;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5") (dash "2.17"))
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
 
 
 ;; This program is free software: you can redistribute it and/or
