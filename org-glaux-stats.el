@@ -1,7 +1,38 @@
-(require 'org)
-(require 'seq)
-(require 'cl-lib)
+;;; org-glaux-stats.el --- Wiki statistics for Org-glaux -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2020-2021 Firmin Martin
+
+;; Author: Firmin Martin
+;; Maintainer: Firmin Martin
+;; Version: 0.3
+;; Keywords: outlines, files, convenience
+;; URL: https://www.github.com/firmart/org-glaux
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
+
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of
+;; the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; (WIP) This file provides wiki statistics such as total pages, broken links count, orphelin pages (WIP) etc.
+
+;;; Code:
+
+;; built-in libraries
+(require 'org)
+(require 'seq) ;; TODO Drop this dependency: use cl-lib only
+(require 'cl-lib)
 (require 'vc)
 (require 'vc-git)
 
@@ -9,7 +40,9 @@
 (require 'org-glaux-core)
 (require 'org-glaux-vc)
 
-;;;; Internal -- Links Utilities
+;;;; Internal: Links Stats Utilities
+
+;;;###autoload
 (defun org-glaux--get-file-links (fpath &rest link-type)
   "Return all links of type LINK-TYPE appearing in file FPATH."
   (with-temp-buffer (insert-file-contents fpath)
@@ -18,6 +51,7 @@
 	                (when (member (org-element-property :type link) link-type)
 	                  (org-element-property :path link)))))) 
 
+;;;###autoload
 (defun org-glaux--get-all-links-by-page (&rest link-type)
   "Return an alist (PAGE-FPATH . LINK-TYPE list)."
   (mapcar (lambda (f)
@@ -31,6 +65,7 @@
 	    (length (apply #'org-glaux--get-file-links f link-type)))
 	  (org-glaux--pages-list))) 
 
+;;;###autoload
 (defun org-glaux--get-page-back-links (fpath &optional wlbp)
   "Return a list of page's file-path which has a wiki-link to FPATH.
 
@@ -46,6 +81,7 @@ WLBP is the returned value of (`org-glaux--get-all-links-by-page')."
 		    wpath-list)
 	  (push page-path back-links))))))
 
+;;;###autoload
 (defun org-glaux--positive-broken-links-by-page ()
   "Return an alist of (fpath . broken-count) by wiki page.
 
@@ -65,10 +101,9 @@ Only wiki pages having broken-links > 0 are in the alist."
 			l))))))
     (org-glaux--get-all-links-by-page "wiki"))))
 
-;;;; Internal -- Stats
+;;;; Internal: Wiki Stats
 
 ;;;###autoload
-;; TODO show broken file: link
 (defun org-glaux--show-wiki-stats ()
   "Show current wiki statistics."
   (interactive)
@@ -154,6 +189,7 @@ Only wiki pages having broken-links > 0 are in the alist."
 
 ;;;;; Internal -- Stats -- Edits Count
 
+;;;###autoload
 (defun org-glaux--stats-git-edit-count-by-file ()
   "Return (file . edit-count) alist."
   (let ((rm-files (org-glaux--vc-git-get-removed-files)))
@@ -165,6 +201,7 @@ Only wiki pages having broken-links > 0 are in the alist."
               (cons f (org-glaux--stats-git-file-edit-count f)))
             (org-glaux--vc-git-get-vc-files))))
 
+;;;###autoload
 (defun org-glaux--stats-git-file-edit-count (fpath)
   "Return git commit count of FPATH *in the working tree*.
 
@@ -173,10 +210,12 @@ FIXME: replace them with unicode."
   (let ((default-directory org-glaux-location))
     (length (process-lines vc-git-program "log" "--oneline" (string-as-unibyte fpath)))))
 
+;;;###autoload
 (defun org-glaux--stats-git-edits-count (ecbf)
   "Given ECBF (edits-count by file), compute a list of edits count."
   (mapcar #'cdr (org-glaux--stats-git-edit-count-by-file)))
 
+;;;###autoload
 (defun org-glaux--stats-git-avg-edit-count-by-file (&optional edits-count ecbf)
   "Compute the average of edits by file.
 
@@ -186,6 +225,7 @@ EDITS-COUNT and ECBF (edits-count by file) are computed when needed."
 			  (or ecbf (org-glaux--stats-git-edit-count-by-file))))))
     (/ (float (apply #'+ edits-count)) (length edits-count))))
 
+;;;###autoload
 (defun org-glaux--stats-git-median-edit-count-by-file (&optional edits-count ecbf)
   "Compute the median of edits by file.
 
@@ -195,6 +235,7 @@ EDITS-COUNT and ECBF (edits-count by file) are computed when needed."
 			  (or ecbf (org-glaux--stats-git-edit-count-by-file))))))
     (org-glaux--calc-median edits-count)))
 
+;;;###autoload
 (defun org-glaux--stats-git-top-edit-count-files (n &optional ecbf)
   "Return a sorted alist (file-path . edits count) of the top N edits files.
 
@@ -202,6 +243,7 @@ If N is nil, return all files sorted in descending edits count order.
 ECBF (edits-count by file) is computed when needed."
   (org-glaux--stats-top-count-files n #'org-glaux--stats-git-edit-count-by-file ecbf))
 
+;;;###autoload
 (defun org-glaux--stats-top-broken-links-count-files (n &optional pblbp)
   "Return the top N wiki page having the most broken links.
 
@@ -211,6 +253,7 @@ PBLBP (positive broken links by page) is computed when needed."
   (mapcar (lambda (entry) (cons (org-glaux--file-wiki-path (car entry)) (cdr entry)))
           (org-glaux--stats-top-count-files n #'org-glaux--positive-broken-links-by-page pblbp)))
 
+;;;###autoload
 (defun org-glaux--stats-top-count-files (n f &optional alist-by-page)
   "Return the top N entry (file-path . count) having the highest count.
 
@@ -226,6 +269,7 @@ with no argument."
 
 ;;;;; Internal -- Stats -- Links by page
 
+;;;###autoload
 (defun org-glaux--get-avg-links-by-page (lbp &optional links-count pages-count)
   "Given LBP (links by page), compute the average number of links by page.
 
@@ -234,6 +278,7 @@ LINKS-COUNT and PAGES-COUNT are computed when needed."
 	 (pages-count (or pages-count (length links-count))))
     (/ (float (apply #'+ links-count)) pages-count)))
 
+;;;###autoload
 (defun org-glaux--get-median-links-by-page (lbp &optional links-count)
   "Given LBP (links by page), compute the median of links by page.
 
@@ -242,6 +287,7 @@ LINKS-COUNT is computed when needed."
 			 (org-glaux--get-links-count-by-page lbp))))
     (org-glaux--calc-median links-count)))
 
+;;;###autoload
 (defun org-glaux--get-links-count-by-page (lbp &optional rmdup)
   "Given LBP (page . links) alist, compute the number of links by page.
 
@@ -251,7 +297,8 @@ Duplicated links are removed if RMDUP is non-nil."
 			            (cdr entry))))
 	  lbp))
 
-;;;; Internal -- Computation
+;;;; Internal: Computation
+;;;###autoload
 (defun org-glaux--calc-median (nlist)
   "Return the mean of the number list NLIST."
   (let* ((sortl (sort nlist '<))
@@ -267,4 +314,5 @@ Duplicated links are removed if RMDUP is non-nil."
 	     sortl))
 	 (float 2)))))
 
+;;; org-glaux-stats.el ends here
 (provide 'org-glaux-stats)

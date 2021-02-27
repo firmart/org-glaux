@@ -1,5 +1,35 @@
-(require 'org-glaux-core)
+;;; org-glaux-init.el --- Org glaux init utilities -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2020-2021 Firmin Martin
+
+;; Author: Firmin Martin
+;; Maintainer: Firmin Martin
+;; Version: 0.3
+;; Keywords: outlines, files, convenience
+;; URL: https://www.github.com/firmart/org-glaux
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
+
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of
+;; the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file provides utilities to initialize a wiki or a new page (through a template).
+
+;;; Code:
+
+(require 'org-glaux-core)
 
 (defcustom org-glaux-location-list '("~/org/wiki")
   "List of org-glaux root directories."
@@ -8,6 +38,7 @@
   :package-version '(org-glaux . "0.1"))
 
 ;; TODO change to a function type defaults to org-glaux--insert-header with org-glaux-template
+;; TODO use mustache.el instead this dirty trick
 (defcustom org-glaux-template
   "#+OPTIONS: d:nil tags:nil todo:nil toc:t ^:nil
 #+TITLE: %n
@@ -53,4 +84,5 @@ Optional arguments TITLE and DATE."
 	  (error (format "`org-glaux-location-list' is nil or it contains non-existent directory '%s'" fst-loc)))
 	(setq org-glaux-location fst-loc))))
 
+;;; org-glaux-init.el ends here
 (provide 'org-glaux-init)

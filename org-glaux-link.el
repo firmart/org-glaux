@@ -27,10 +27,9 @@
 
 ;; This file provides additional Org link support:
 ;; - Add "wiki:" link for Org glaux personal wiki
-;; - Dead link highlighting for file, http & https links
+;; - Dead link highlighting for file links (WIP: http & https)
 
 ;;; Code:
-;;;; Customization
 
 (require 'org)
 (require 'org-glaux-core)
@@ -51,7 +50,7 @@
 ;; (org-link-set-parameters "http" :face #'org-glaux--url-face)
 ;; (org-link-set-parameters "https" :face #'org-glaux--url-face)
 
-;;;; Internal: Face
+;;;; Internal: Dynamic Face
 
 (defun org-glaux--generic-face (fpath)
   ;; Do not connect to remote files
@@ -98,4 +97,5 @@
 	(puthash hash-key url org-glaux--link-url-hash-table)
 	'org-default))))
 
+;;; org-glaux-link.el ends here
 (provide 'org-glaux-link)

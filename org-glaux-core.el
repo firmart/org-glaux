@@ -110,7 +110,7 @@ Directory (ends with a slash \"/\"):
   "Convert a page's WIKI-PATH to corresponding html filepath."
   (org-glaux--replace-extension (org-glaux--wiki-path-fpath wiki-path) "html"))
 
-;;;; Internal -- Predicate
+;;;; Internal: Predicate
 (defun org-glaux--wiki-file-p (fpath)
   "Return non-nil if FPATH is an org-glaux file under `org-glaux-location'."
   (when fpath
@@ -120,5 +120,5 @@ Directory (ends with a slash \"/\"):
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
   (org-glaux--wiki-file-p (buffer-file-name buffer)))
 
-;;; org-glaux.el ends here
+;;; org-glaux-core.el ends here
 (provide 'org-glaux-core)

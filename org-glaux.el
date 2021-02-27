@@ -28,14 +28,15 @@
 ;; Org-glaux is an org-mode extension that provides tools to manage and
 ;; build a desktop wiki where each wiki page is an org-mode file.
 
-;; external libraries
-(require 'org)
-(require 'ox-html)
+;;; Code:
 
 ;; built-in Emacs lib
+(require 'org)
+(require 'ox-html)
 (require 'cl-lib)     ;; Common-lisp emulation library
-(require 'subr-x)     ;; Provides string trim functions.
+(require 'subr-x)     ;; Provides string trim functions. FIXME (still in use ?)
 
+;; Org-glaux libraries
 (require 'org-glaux-core)
 (require 'org-glaux-init)
 (require 'org-glaux-vc)
@@ -45,7 +46,6 @@
 (require 'org-glaux-export)
 (require 'org-glaux-link)
 
-;;; Code:
 ;;; Custom group
 ;;;; General settings
 

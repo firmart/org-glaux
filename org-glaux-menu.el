@@ -1,4 +1,32 @@
+;;; org-glaux-menu.el --- Menu for Org-glaux -*- lexical-binding: t; -*-
 
+;; Copyright (C) 2020-2021 Firmin Martin
+
+;; Author: Firmin Martin
+;; Maintainer: Firmin Martin
+;; Version: 0.3
+;; Keywords: outlines, files, convenience
+;; URL: https://www.github.com/firmart/org-glaux
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
+
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of
+;; the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file provides menu for Org-glaux. Enable it through `org-glaux-menu-enable' and in case you haven't done it, activate `menu-bar-mode'.
+;; The menu entries are generated automatically through `org-glaux--easy-men-entry' which takes a category name and a common prefix of interactive functions.
 
 ;;; Code:
 
@@ -26,7 +54,7 @@
 		(vector (documentation 'org-glaux-new-page) 'org-glaux-new-page)
 		(vector (documentation 'org-glaux-website) 'org-glaux-website)))))
 
-;;;; Internal -- Menu
+;;;; Internal: Menu
 (defun org-glaux--easy-menu-entry (entry-name prefix)
   "Create a menu entry with ENTRY-NAME including functions prefixed by PREFIX."
   ;; (entry-name [doc_f1 f1] [doc_f2 f2] ...)
@@ -44,4 +72,5 @@
 			 (push (symbol-name x) glaux-list ))))
 	   glaux-list))))
 
+;;; org-glaux-menu.el ends here
 (provide 'org-glaux-menu)

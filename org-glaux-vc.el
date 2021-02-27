@@ -1,4 +1,4 @@
-;;; org-glaux-vc.el --- Wiki version control -*- lexical-binding: t; -*-
+;;; org-glaux-vc.el --- Org glaux version control -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020-2021 Firmin Martin
 
@@ -25,18 +25,18 @@
 
 ;;; Commentary:
 
-;; This file provides version control such as
+;; This file provides Org glaux version control supports such as
 ;; - manual commit of the full wiki; 
 ;; - automatic commit upon distinct events (page close, page follow, page save).
 
-(require 'org-glaux-core)
+;;; Code:
 
 (require 'vc)
 (require 'vc-git)
 (require 'vc-hooks) ;; `vc-directory-exclusion-list'
 
+(require 'org-glaux-core)
 
-;;; Code:
 ;;; Custom group
 ;;;; Version control settings
 ;; TODO add other vcs on request
@@ -113,7 +113,8 @@ in index page."
   (save-excursion
     (switch-to-buffer "*vc*")))
 
-;;;; Internal
+;;;; Internals
+;;;;; VCS
 
 (define-error 'org-glaux--vc-git-not-installed "Git is not installed")
 
@@ -277,7 +278,7 @@ Should be called after `org-glaux--vc-git-register-files'"
                                                     rel-fpath)))))
 	      (let ((git-cur-branch (car (process-lines vc-git-program "rev-parse" "--abbrev-ref" "HEAD"))))
 	        (process-lines vc-git-program "ls-tree" "-r" git-cur-branch "--name-only"))))))
-;;;; Misc
+;;;;; Misc
 (defun org-glaux--glob2regex (glob)
   "Convert GLOB expression to regex.
 
@@ -350,4 +351,5 @@ the separators."
      (org-glaux--chop-string str "\\\\[0-7]\\{3\\}" t t)))
    'utf-8))
 
+;;; org-glaux-vc.el ends here
 (provide 'org-glaux-vc)

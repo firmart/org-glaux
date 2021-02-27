@@ -33,7 +33,7 @@
 (require 'org-glaux-core)
 
 ;;;; Customization
-;;;; Async export settings
+;;;;; Async export settings
 (defcustom org-glaux-emacs-path "emacs"
   "Path to Emacs executable.  Default value 'Emacs'."
   :type 'file
@@ -92,6 +92,8 @@ execution."
 		 t)))
 
 ;;;; Internal: Publish
+
+;;;###autoload
 (defun org-glaux--pages-to-publish ()
   (let ((pages (org-glaux--pages-list)))
     (cl-loop for p in pages
@@ -101,6 +103,7 @@ execution."
 			     (format-time-string "%s" (file-attribute-modification-time (file-attributes p)))))
 	     collect p)))
 
+;;;###autoload
 (defun org-glaux--make-org-publish-plist (org-exporter)
   "Prepare plist for use with `org-publish'.
 Argument ORG-EXPORTER an org-exporter."

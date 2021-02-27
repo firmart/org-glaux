@@ -1,4 +1,4 @@
-;;; org-glaux-server.el --- Org glaux -*- lexical-binding: t; -*-
+;;; org-glaux-server.el --- Org-glaux web server -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2020-2021 Firmin Martin
 
@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; This file provides the core functions used by every Org glaux component.
+;; This file provides a way to view wiki pages on a web server using `simple-httpd'.
 
 (require 'simple-httpd)
 (require 'org-glaux-core)
@@ -60,4 +60,5 @@
       (message "Started simple-httpd on %s:%s, serving: %s" httpd-host httpd-port httpd-root)
       (browse-url (format "http://localhost:%s" org-glaux-server-port)))))
 
+;;; org-glaux-server.el ends here
 (provide 'org-glaux-server)
