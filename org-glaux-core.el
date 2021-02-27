@@ -120,4 +120,5 @@ Directory (ends with a slash \"/\"):
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
   (org-glaux--wiki-file-p (buffer-file-name buffer)))
 
+;;; org-glaux.el ends here
 (provide 'org-glaux-core)

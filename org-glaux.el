@@ -43,6 +43,7 @@
 (require 'org-glaux-stats)
 (require 'org-glaux-server)
 (require 'org-glaux-export)
+(require 'org-glaux-link)
 
 ;;; Code:
 ;;; Custom group
@@ -249,7 +250,6 @@ If NON-VERB is non-nil, suppress all message."
 
 The assets directory associated to the wiki page is moved/renamed accordingly.
 If NON-VERB is non-nil, suppress all message."
-
 
   (interactive
    (let ((src-wiki-path (org-glaux--select 'identity "Wiki-path of source (page): "))
@@ -806,8 +806,6 @@ Use PROMPT if it is non-nil."
   (let ((target (completing-read (or prompt "Asset: ")
 				 (org-glaux--assets-page-files buffer-file-name))))
     (funcall callback (org-glaux--cur-page-assets-file target))))
-
-;;;; Internal: Miscellaneous
 
 ;;; org-glaux.el ends here
 (provide 'org-glaux)

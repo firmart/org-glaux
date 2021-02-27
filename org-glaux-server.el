@@ -1,6 +1,36 @@
+;;; org-glaux-server.el --- Org glaux -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2020-2021 Firmin Martin
+
+;; Author: Firmin Martin
+;; Maintainer: Firmin Martin
+;; Version: 0.3
+;; Keywords: outlines, files, convenience
+;; URL: https://www.github.com/firmart/org-glaux
+;; Package-Requires: ((emacs "25.1") (org "9.3") (cl-lib "0.5"))
+
+
+;; This program is free software: you can redistribute it and/or
+;; modify it under the terms of the GNU General Public License as
+;; published by the Free Software Foundation, either version 3 of
+;; the License, or (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; This file provides the core functions used by every Org glaux component.
+
+(require 'simple-httpd)
 (require 'org-glaux-core)
 
-;;;; Python webserver settings
+;;;; Webserver settings
 (defcustom org-glaux-server-port "8000"
   "Default port to server org-glaux static files server."
   :type  'string
@@ -15,40 +45,19 @@
 
 ;;;; Server
 
-;; Despite this function was implemented as a interface to
-;; Python3 simple http server, it can be refactored to work
-;; with another more powerful http server such as Nginx.
-
 ;;;###autoload
 (defun org-glaux-server-toggle ()
-  "Start/stop org-glaux http server.  It requires Python3.
-Note: This command requires Python3 installed."
+  "Start/stop org-glaux http server."
   (interactive)
-  (let (;; Process name
-	(pname  "org-glaux-server")
-	;; Buffer name - Display process output (stdout)
-	(bname   "*org-glaux-server*")
-	;; Set current directory to org-glaux repository.
-	(default-directory org-glaux-location))
-    (if (not (get-buffer bname))
-	(progn
-	  (sit-for 0.1)
-	  (switch-to-buffer bname)
-	  (save-excursion ;; Save cursor position
-	    (insert "Server started ...\n\n")
-	    (message "org-glaux: server started ..."))
-	  (start-process pname
-			 bname
-			 "python3"
-			 "-m"
-			 "http.server"
-			 "--bind"
-			 org-glaux-server-host
-			 org-glaux-server-port)
-	  (when (y-or-n-p "Open server in browser ? ")
-	    (browse-url (format "http://localhost:%s" org-glaux-server-port))))
-      (progn  (switch-to-buffer bname)
-	      (kill-process (get-process pname))
-	      (message "org-glaux: server stopped")))))
+  (let ((httpd-host org-glaux-server-host)
+	(httpd-port org-glaux-server-port)
+	(httpd-root org-glaux-location))
+
+    (if (httpd-running-p)
+	(progn (httpd-stop)
+	       (message "Stop simple-httpd on %s:%s, serving: %s" httpd-host httpd-port httpd-root))
+      (httpd-start)
+      (message "Started simple-httpd on %s:%s, serving: %s" httpd-host httpd-port httpd-root)
+      (browse-url (format "http://localhost:%s" org-glaux-server-port)))))
 
 (provide 'org-glaux-server)

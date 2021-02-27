@@ -247,7 +247,8 @@ Should be called after `org-glaux--vc-git-register-files'"
      'save
      "org-glaux: automatic commit on page save")))
 
-(add-hook 'after-save-hook 'org-glaux--vc-git-commit-on-save)
+;; TODO this affects publish performance
+;; (add-hook 'after-save-hook 'org-glaux--vc-git-commit-on-save)
 
 (defun org-glaux--vc-git-get-removed-files ()
   "Return files in removed state under git VCS."
