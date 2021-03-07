@@ -68,6 +68,8 @@ execution."
     (org-publish pub-plist t)))
 
 ;;;###autoload
+;; TODO kind of useless as ‘org-export-process’ exited abnormally... and
+;; silently
 (defun org-glaux-export-html-async ()
   "Export all pages to html in asynchronous mode."
   (interactive)
@@ -88,6 +90,7 @@ execution."
   (interactive)
   (let ((org-html-htmlize-output-type "css")
         (org-html-htmlize-font-prefix "org-"))
+    (message "[Org-glaux] Start to export %s pages in HTML." (length (org-glaux--pages-to-publish)))
     (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
 		 t)))
 
@@ -95,6 +98,7 @@ execution."
 
 ;;;###autoload
 (defun org-glaux--pages-to-publish ()
+  "Return a list of recently modified Org pages to publish later."
   (let ((pages (org-glaux--pages-list)))
     (cl-loop for p in pages
 	     as h = (concat (file-name-sans-extension p) ".html")
@@ -106,7 +110,10 @@ execution."
 ;;;###autoload
 (defun org-glaux--make-org-publish-plist (org-exporter)
   "Prepare plist for use with `org-publish'.
-Argument ORG-EXPORTER an org-exporter."
+Argument ORG-EXPORTER is a function executing the publication of
+a file.  It may also be a list of functions, which are all called
+in turn.
+"
   (let ((plist-base
 	 `("html"
 	   :base-directory        ,org-glaux-location
