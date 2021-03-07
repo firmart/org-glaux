@@ -313,16 +313,22 @@ The page is created if it doesn't exist."
 
 ;;;; Insert
 ;;;###autoload
-(defun org-glaux-insert-asset ()
+;; TODO Fix asset selection
+(defun org-glaux-insert-asset (&optional arg)
   "Insert at point a file link to a current page's asset file.
-The link type file is opened with Emacs."
-  (interactive)
-  (let* ((file (org-glaux--assets-select #'identity))
-         (asset-link (format "file:%s/%s"
-			     (org-glaux--cur-page-assets-dir)
-	                     (file-name-nondirectory file)))
-         (desc (read-string "Description: "
-                            (when (use-region-p)
+The link type file is opened with Emacs.
+
+  If called with \\[unversal-argument], select amongst all assets of the wiki.
+  Otherwise, select current page asset."
+  (interactive "P")
+  (let* ((file (if arg (completing-read "Wiki assets: " (org-glaux--assets-list))
+		 (org-glaux--assets-select #'identity)))
+	 (asset-link (if arg file
+		       (format "file:%s/%s"
+			       (org-glaux--cur-page-assets-dir)
+	                       (file-name-nondirectory file))))
+	 (desc (read-string "Description: "
+			    (when (use-region-p)
                               (buffer-substring-no-properties
                                (region-beginning)
                                (region-end))))))
@@ -333,7 +339,7 @@ The link type file is opened with Emacs."
       (insert
        (org-link-make-string asset-link
 			     (if (string-empty-p desc)
-                                 (file-name-nondirectory file)
+				 (file-name-nondirectory file)
                                desc))))))
 
 ;;;###autoload
@@ -489,12 +495,17 @@ The html page is created if it doesn't exist yet."
   (org-glaux--select #'org-glaux--wiki-follow))
 
 ;;;###autoload
-(defun org-glaux-select-asset ()
-  "Select and open a wiki page's asset."
-  (interactive)
-  (let ((target (completing-read  "Wiki assets: " (org-glaux--assets-list))))
-    (org-open-file target)))
+(defun org-glaux-select-asset (&optional arg)
+  "Select and open a wiki asset.
 
+If called with \\[unversal-argument], select amongst all assets of the wiki.
+Otherwise, select current page asset."
+  (interactive "P")
+  (if arg
+      (org-open-file (completing-read  "Wiki assets: " (org-glaux--assets-list)))
+    (org-glaux--assets-select #'org-open-file)))
+
+   
 ;;;###autoload
 (defun org-glaux-select-root ()
   "Switch org-glaux root directory."
@@ -710,7 +721,7 @@ Argument FORMAT format to export."
    (buffer-list)))
 
 (defun org-glaux--pages-list ()
-  "Return a list containing all wiki-pages under `org-glaux-location`."
+  "Return a list containing all wiki-pages under `org-glaux-location'."
   (org-glaux--init-location)
   (let ((ignored-regexs (mapcar
 			 #'org-glaux--glob2regex
@@ -722,7 +733,7 @@ Argument FORMAT format to export."
      ignored-regexs)))
 
 (defun org-glaux--assets-list ()
-    "Return a list containing all assets under `org-glaux-location`."
+    "Return a list containing all assets under `org-glaux-location'."
     (org-glaux--init-location)
     (let ((pages (org-glaux--pages-list))
 	  (ignored-regexs (mapcar
