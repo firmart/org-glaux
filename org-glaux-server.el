@@ -45,6 +45,27 @@
 
 ;;;; Server
 
+;; See the following upstream issue:
+;; https://github.com/skeeto/emacs-web-server/issues/23
+;; It's easy to reproduce: serve your wiki and click e.g. on a id link, then
+;; a new process whose the name is "httpd <127.0.0.1:60216>" would appear.
+(defun org-glaux-server-running-p ()
+  "Return all httpd process if there is any, otherwise `nil'."
+  (cl-remove-if-not (lambda (proc)
+		      (let ((name (process-name proc)))
+			(and name
+			     (string-prefix-p "httpd" name))))
+		    (process-list)))
+
+(defun org-glaux-server-stop ()
+  "Stop org-glaux http server."
+  (interactive)
+  (let ((procs (org-glaux-server-running-p)))
+    (when procs
+      (mapc #'delete-process procs)
+      (httpd-log `(stop ,(current-time-string)))
+      (run-hooks 'httpd-stop-hook))))
+
 ;;;###autoload
 (defun org-glaux-server-toggle ()
   "Start/stop org-glaux http server."
@@ -53,12 +74,12 @@
 	(httpd-port org-glaux-server-port)
 	(httpd-root org-glaux-location))
 
-    (if (httpd-running-p)
-	(progn (httpd-stop)
+    (if (org-glaux-server-running-p)
+	(progn (org-glaux-server-stop)
 	       (message "Stop simple-httpd on %s:%s, serving: %s" httpd-host httpd-port httpd-root))
       (httpd-start)
       (message "Started simple-httpd on %s:%s, serving: %s" httpd-host httpd-port httpd-root)
-      (browse-url (format "http://localhost:%s" org-glaux-server-port)))))
+      (browse-url (format "%s:%s" httpd-host org-glaux-server-port)))))
 
 ;;; org-glaux-server.el ends here
 (provide 'org-glaux-server)
