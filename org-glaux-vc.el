@@ -105,6 +105,7 @@ in index page."
 (defun org-glaux-vc-git-full-commit ()
   "Register and commit all relevant files of the full wiki."
   (interactive)
+  (org-save-all-org-buffers)
   ;; move to index to obtain wiki-based configuration on ignored glob
   (org-glaux--vc-git-commit-files
    (directory-files-recursively org-glaux-location "^.*$")
@@ -291,7 +292,7 @@ Should be called after `org-glaux--vc-git-register-files'"
 
 ;; TODO add progress bar
 (defun org-glaux--batch-execute-list (f size data-list)
-  "Execute function F per batch of DATA-LIST with size SIZE."
+  "Execute function F on DATA-LIST per batch of size SIZE."
   (let* ((sublist (butlast data-list (- (length data-list) size)))
 	 (offset size))
     (while sublist

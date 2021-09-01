@@ -55,14 +55,14 @@ configuration can be found below.
 ** Link formats
    Wiki-links are in [[https://en.wikipedia.org/wiki/Help:Link#Subpage_links][Wikipedia-style]].
 
-  |---------------------------+----------------------------------------------------------|
-  | Link                      | To                                                       |
-  |---------------------------+----------------------------------------------------------|
+  |-------------------------+--------------------------------------------------------|
+  | Link                    | To                                                     |
+  |-------------------------+--------------------------------------------------------|
   | ~wiki:path/to/<pagename>~ | Absolute path: ~<org-glaux-location>/path/to/<pagename>~ |
   | ~wiki:/<pagename>~        | Child page: ~<current_page>/<pagename>~                  |
-  | ~wiki:../~                | Parent page                                              |
-  | ~wiki:../<pagename>~      | Sibling page                                             |
-  |---------------------------+----------------------------------------------------------|
+  | ~wiki:../~                | Parent page                                            |
+  | ~wiki:../<pagename>~      | Sibling page                                           |
+  |-------------------------+--------------------------------------------------------|
 
 ** Wishlist
  - Support showing page description on point with (tooltip)

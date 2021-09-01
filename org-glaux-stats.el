@@ -119,8 +119,8 @@ Only wiki pages having broken-links > 0 are in the alist."
       (let* ((wlcbp (progn (progress-reporter-update progress-reporter 1)
 			   (org-glaux--get-all-links-count-by-page "wiki")))
 	     (pblbp (progn (progress-reporter-update progress-reporter 1) (org-glaux--positive-broken-links-by-page))))
-	(org-insert-heading)
 	;; Pages
+	(org-insert-heading)
 	(insert "Pages Stats\n")
 	(insert (format "  - Pages count: %d" (length wlcbp)))
 	(org-insert-heading)

@@ -85,7 +85,8 @@ Default value: \\[t]"
 
 ;;;; Hooks
 ;; (defcustom org-glaux-pre-close-hook nil
-;;   "List of hook functions run by `org-glaux-close-root-switch', `org-glaux-close-pages' and `org-glaux-close-images'. (see `run-hooks')."
+;;   "List of hook functions run by `org-glaux-close-root-switch',
+;;   `org-glaux-close-pages' and `org-glaux-close-images'. (see `run-hooks')."
 ;;   :type 'hook
 ;;   :group 'org-glaux
 ;;   :package-version '(org-glaux . "0.2"))
@@ -324,8 +325,8 @@ The link type file is opened with Emacs.
   (let* ((file (if arg (completing-read "Wiki assets: " (org-glaux--assets-list))
 		 (org-glaux--assets-select #'identity)))
 	 (asset-link (if arg file
-		       (format "file:%s/%s"
-			       (org-glaux--cur-page-assets-dir)
+		       (format "file:%s%s"
+			       (file-name-directory file)
 	                       (file-name-nondirectory file))))
 	 (desc (read-string "Description: "
 			    (when (use-region-p)
