@@ -59,23 +59,29 @@ like html.  It can be for instance:
 `org-latex-publish-to-latex', etc.
 
 WARN: This is a synchronous function and can freeze Emacs.  Emacs will freeze
-while the exporting doesn't finish.  Type \\<keyboard-quit> to abort the
+while the exporting doesn't finish.  Type \\[keyboard-quit] to abort the
 execution."
   (interactive)
   (let ((org-html-htmlize-output-type "css")
         (org-html-htmlize-font-prefix "org-")
         (pub-plist (org-glaux--make-org-publish-plist org-exporter)))
-    (org-publish pub-plist t)))
+    (org-publish pub-plist)))
 
 ;;;###autoload
-;; TODO kind of useless as ‘org-export-process’ exited abnormally... and
-;; silently
+;; BUG: Debugger entered--Lisp error: (void-variable org-export-async-debug)
 (defun org-glaux-export-html-async ()
   "Export all pages to html in asynchronous mode."
   (interactive)
   (let ((org-html-htmlize-output-type "css")
-	(org-html-htmlize-font-prefix "org-"))
-    (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html) t t)))
+	(org-html-htmlize-font-prefix "org-")
+	(org-export-async-init-file (make-temp-file "org-export-process")))
+    (with-current-buffer (find-file-noselect org-export-async-init-file)
+      (insert
+       (concat
+	(format "(load-file \"%s\")\n" (locate-library "org"))
+	(format "(require 'ox)\n")
+	(format "(setq org-export-async-debug nil)\n"))))
+    (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html) nil t)))
 
 ;;;###autoload
 (defun org-glaux-export-html-page ()
@@ -88,10 +94,7 @@ execution."
 (defun org-glaux-export-html-sync ()
   "Export all pages to html in synchronous mode."
   (interactive)
-  (let ((org-html-htmlize-output-type "css")
-        (org-html-htmlize-font-prefix "org-"))
-    (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
-		 t)))
+  (org-glaux-export-as 'org-html-publish-to-html))
 
 ;;;; Internal: Publish
 
