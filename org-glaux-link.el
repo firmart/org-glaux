@@ -106,7 +106,7 @@
 (defun org-glaux--generic-face (fpath)
   "Use different faces for available and broken filepath."
   ;; Do not fontify remote filepath and filepath outside Org-glaux pages.
-  (when (and (org-glaux--wiki-buffer-p current-buffer)
+  (when (and (org-glaux--wiki-buffer-p (current-buffer))
 	     (not (file-remote-p fpath)))
     (if (file-exists-p fpath)
 	'org-glaux-link-valid-face
