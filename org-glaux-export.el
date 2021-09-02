@@ -90,7 +90,6 @@ execution."
   (interactive)
   (let ((org-html-htmlize-output-type "css")
         (org-html-htmlize-font-prefix "org-"))
-    (message "[Org-glaux] Start to export %s pages in HTML." (length (org-glaux--pages-to-publish)))
     (org-publish (org-glaux--make-org-publish-plist 'org-html-publish-to-html)
 		 t)))
 
@@ -114,14 +113,16 @@ Argument ORG-EXPORTER is a function executing the publication of
 a file.  It may also be a list of functions, which are all called
 in turn.
 "
-  (let ((plist-base
+  (let* ((pages (org-glaux--pages-to-publish))
+	 (plist-base
 	 `("html"
 	   :base-directory        ,org-glaux-location
-	   :base-extension        "org"
-	   :include               ,(org-glaux--pages-to-publish)
+	   :exclude               ".*"
+	   :include               ,pages
 	   :with-broken-links     t
 	   :publishing-directory  ,org-glaux-location
 	   :publishing-function   ,org-exporter)))
+    (message "[Org-glaux] Prepare to export %s pages in HTML." (length pages))
     (setcdr plist-base
 	    ;; combine with custom publish settings
 	    (org-combine-plists (cdr plist-base) org-glaux-publish-plist))
