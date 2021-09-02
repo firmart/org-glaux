@@ -25,15 +25,25 @@
 
 ;;; Commentary:
 
-;; This file provides menu for Org-glaux. Enable it through `org-glaux-menu-enable' and in case you haven't done it, activate `menu-bar-mode'.
-;; The menu entries are generated automatically through `org-glaux--easy-men-entry' which takes a category name and a common prefix of interactive functions.
+;; This file provides menu for Org-glaux. Enable it through
+;; `org-glaux-menu-enable' and in case you haven't done it, activate
+;; `menu-bar-mode'.  The menu entries are generated automatically through
+;; `org-glaux--easy-menu-entry' which takes a category name and a common prefix
+;; of interactive functions.
 
 ;;; Code:
 
-;; TODO: disable.
+;;;###autoload
+(defun org-glaux-menu-disable ()
+  "Disable the menu entry of org-glaux"
+  (interactive)
+  (require 'easymenu)
+  (easy-menu-define nil global-map nil
+    (list "Org-glaux" :active nil)))
+
 ;;;###autoload
 (defun org-glaux-menu-enable ()
-  "Build a menu for org-glaux."
+  "Build and enable a menu for org-glaux."
   (interactive)
   (require 'easymenu)
   (easy-menu-define org-glaux-menu global-map "Org-glaux"
