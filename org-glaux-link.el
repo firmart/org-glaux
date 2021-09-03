@@ -33,6 +33,7 @@
 ;; TODO: It may be a better idea to use overlays or text properties for http links.
 ;;       1. It will not overwrite people http link :face
 ;;       2. It offers more complex (but bug-prone) display (e.g. a superscript to hint [broken link])
+;;       3. Link archive + status archive.
 
 ;;; Code:
 
@@ -40,18 +41,29 @@
 (require 'org-glaux-core)
 (require 'org-glaux-auto-answer)
 
-;;; Links
 ;;;; Customization
-;;;;; Hash table
-(defcustom org-glaux-url-htbl-fpath
-  (expand-file-name ".org-glaux-url-htbl.el" user-emacs-directory)
-  "Filepath where the hash table of url `org-glaux--url-htbl' is saved."
+;;;;; HTTP Link Settings
+(defcustom org-glaux-link-http-timeout-max 4
+  "Maximum timeout beyond which link is considered as inaccessible, in seconds."
+  :type 'integer
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.3"))
+
+(defcustom org-glaux-link-http-status-expiration 90
+  "Time after which url status in `org-glaux-link-http-htbl' expires, in days."
+  :type 'integer
+  :group 'org-glaux
+  :package-version '(org-glaux . "0.3"))
+
+(defcustom org-glaux-link-http-htbl-fpath
+  (expand-file-name ".org-glaux-http-htbl.el" user-emacs-directory)
+  "Filepath where the hash table of url `org-glaux-link-http-htbl' is saved."
   :type 'file
   :group 'org-glaux
   :package-version '(org-glaux . "0.3"))
 
 ;;;;; Faces
-(defface org-glaux-link-valid-face
+(defface org-glaux-link-found-face
   '((t (:inherit org-link)))
   "Face for valid link."
   :group 'org-glaux
@@ -59,95 +71,134 @@
 
 (defface org-glaux-link-not-found-face
   '((t (:inherit org-warning)))
-  "Face for unaccessible/dead link."
+  "Face for inaccessible/dead link."
   :group 'org-glaux
   :package-version '(org-glaux . "0.3"))
 
-(defface org-glaux-link-timeout-face
+(defface org-glaux-link-http-timeout-face
   '((t (:inherit org-warning :foreground "yellow")))
   "Face for access timeout of http link."
   :group 'org-glaux
   :package-version '(org-glaux . "0.3"))
 
-;;;; Wiki link
+;;;; Links
+;;;;; Wiki link
 ;; Hyperlinks to other wiki pages.
 ;; wiki:<wiki-path> or [[wiki:<wiki-path>][<description>]]
 (org-link-set-parameters "wiki"
 			 :follow #'org-glaux--wiki-follow
 			 :export #'org-glaux--wiki-export
-			 :face #'org-glaux--wiki-face)
+			 :face #'org-glaux-link-wiki-face)
 
-;;;; File link
-(org-link-set-parameters "file" :face #'org-glaux--generic-face)
+;;;;; File link
+(org-link-set-parameters "file" :face #'org-glaux-link-generic-face)
 
-;;;; Http link
-(org-link-set-parameters "http" :face #'org-glaux--url-dynamic-face)
-(org-link-set-parameters "https" :face #'org-glaux--url-dynamic-face)
+;;;;; Http(s) link
+(org-link-set-parameters "http" :face #'org-glaux-link-http-face)
+(org-link-set-parameters "https" :face #'org-glaux-link-http-face)
 
-;;;; Internal: Hash Table
-(defvar org-glaux--url-htbl (org-glaux--read-url-htbl))
+;;;; HTTP(s) Links Hash Table
+(defvar org-glaux-link-http-htbl (org-glaux-link-http-read-htbl))
 
-(defun org-glaux--read-url-htbl ()
-  "Read `org-glaux-url-htbl-fpath'."
-  (when (file-exists-p org-glaux-url-htbl-fpath)
+(defun org-glaux-link-http-read-htbl ()
+  "Read `org-glaux-link-http-htbl-fpath'."
+  (when (file-exists-p org-glaux-link-http-htbl-fpath)
     (with-temp-buffer
-      (insert-file-contents org-glaux-url-htbl-fpath)
+      (insert-file-contents org-glaux-link-http-htbl-fpath)
       (read (buffer-string)))))
 
-(defun org-glaux--save-url-htbl ()
-  "Save `org-glaux--url-htbl' into `org-glaux-url-htbl-fpath'."
+(defun org-glaux-link-http-save-htbl ()
+  "Save `org-glaux-link-http-htbl' into `org-glaux-link-http-htbl-fpath'."
+  (interactive)
   (with-temp-buffer
-    (insert (prin1-to-string org-glaux--url-htbl))
-    (write-file org-glaux-url-htbl-fpath)))
+    (insert (prin1-to-string org-glaux-link-http-htbl))
+    (write-file org-glaux-link-http-htbl-fpath)))
 
-(add-hook 'kill-emacs-hook #'org-glaux--save-url-htbl)
-;;;; Internal: Dynamic Face
-
-(defun org-glaux--generic-face (fpath)
+(add-hook 'kill-emacs-hook #'org-glaux-link-http-save-htbl)
+;;;; Org Link Dynamic Face
+(defun org-glaux-link-generic-face (fpath)
   "Use different faces for available and broken filepath."
   ;; Do not fontify remote filepath and filepath outside Org-glaux pages.
   (when (and (org-glaux--wiki-buffer-p (current-buffer))
 	     (not (file-remote-p fpath)))
     (if (file-exists-p fpath)
-	'org-glaux-link-valid-face
+	'org-glaux-link-found-face
       'org-glaux-link-not-found-face)))
 
-(defun org-glaux--wiki-face (wiki-path)
+(defun org-glaux-link-wiki-face (wiki-path)
   "Dynamic face for WIKI-PATH link."
   (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
-    (org-glaux--generic-face fpath)))
+    (org-glaux-link-generic-face fpath)))
 
-(defun org-glaux--url-face (url &optional timeout)
-  "Return the relevant face resulting from the access of the URL."
-  ;; url-file-exists-p: Certificate are always [s]ession-only
-  (let ((org-glaux-auto-answer '(("Continue connecting?" . ?s))))
-    (with-timeout ((or timeout 1) 'org-glaux-link-timeout-face)
-      (condition-case err
-	  (if (url-file-exists-p url)
-	      'org-glaux-link-valid-face
-	    'org-glaux-link-not-found-face)
-	(error 'org-glaux-link-not-found-face)))))
-
-;; TODO
-;;  :last-access (e.g. invalid result after 1 month)
-;;  :timeout (e.g. double the timeout till a threshold => 'org-warning)
-;;  :status (instead of using :face)
-(defun org-glaux--url-dynamic-face (link)
-  "Dynamic face for url LINK."
+;; TODO test on URL needing authentication
+(defun org-glaux-link-http-face (link)
+  "Dynamic face for HTTP(S) LINK."
   (when (org-glaux--wiki-buffer-p (current-buffer))
     (let* ((context (org-element-context))
 	   (url (org-element-property :raw-link context))
-	   (htbl (or org-glaux--url-htbl
-		     (setq org-glaux--url-htbl (make-hash-table :test 'equal))))
 	   (value (gethash url htbl))
-	   (face (and value (plist-get value :face))))
+	   (status (and value (plist-get value :status)))
+	   (timeout (and value (plist-get value :timeout)))
+	   (last-access (and value (plist-get value :last-access)))
+	   (expired? (and value (org-glaux-link--http-status-expired-p last-access))))
 
-      (if value
-	  face
-	(setq face (org-glaux--url-face url))
-	(prog1 face
-	  (puthash url `(:face ,face :last-access ,(format-time-string "%s" (current-time)))
-		   htbl))))))
+      (if (and value
+	       (not expired?))
+	  ;; not expired nor cache url
+	  (if (eq status 'timeout)
+	      ;; last status was timeout, try again with a higher timeout
+	      (org-glaux-link--http-status2face
+	       (org-glaux-link--http-puthash
+		url
+		(when timeout
+		  (max (* timeout 2) org-glaux-link-timeout-max))))
+	    ;; otherwise, we use the last status
+	      (org-glaux-link--http-status2face status))
+	;; new url
+	(org-glaux-link--http-status2face
+	 (org-glaux-link--http-puthash url))))))
+
+;;;; Internal
+;;;;; HTTP(s) Links Utilities
+(defun org-glaux-link--http-status (url &optional timeout)
+  "Return the relevant status resulting from the access of the URL."
+  ;; url-file-exists-p: Certificate are always [s]ession-only
+  (let ((org-glaux-auto-answer '(("Continue connecting?" . ?s))))
+    (with-timeout ((or timeout 1) 'timeout)
+      (condition-case _
+	  (if (url-file-exists-p url)
+	      'found
+	    'not-found)
+	(error 'not-found)))))
+
+(defun org-glaux-link--http-status2face (status)
+  "Given a HTTP STATUS, return the link font corresponding."
+  (pcase status
+    ('not-found 'org-glaux-link-not-found-face)
+    ('found 'org-glaux-link-found-face)
+    ('timeout 'org-glaux-link-http-timeout-face)))
+
+(defun org-glaux-link--http-status-expired-p (last-access)
+  "Return `t' if LAST-ACCESS refers to an expired date."
+  (let ((expiration-secs (* org-glaux-link-http-status-expiration 24 60 60)))
+    (< (+ last-access expiration-secs)
+       (org-glaux-link--current-uts))))
+
+(defun org-glaux-link--http-puthash (url &optional timeout)
+  "Get the URL status based on TIMEOUT and put the result to `org-glaux-link-http-htbl'."
+  (let ((htbl (or org-glaux-link-http-htbl
+		  (setq org-glaux-link-http-htbl (make-hash-table :test 'equal))))
+	(status (org-glaux-link--http-status url timeout)))
+
+    (when (and (eq status 'timeout)
+	       (>= timeout org-glaux-link-timeout-max))
+      (setq status 'not-found))
+
+    (prog1 status
+      (puthash url `(:status ,status
+		     :last-access ,(org-glaux-link--current-uts)
+		     :timeout (or timeout 1))
+	       htbl))))
 
 ;;; org-glaux-link.el ends here
 (provide 'org-glaux-link)

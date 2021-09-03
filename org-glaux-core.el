@@ -120,5 +120,11 @@ Directory (ends with a slash \"/\"):
   "Return non-nil if BUFFER is an org-glaux buffer under `org-glaux-location'."
   (org-glaux--wiki-file-p (buffer-file-name buffer)))
 
+;;;; Time
+
+(defun org-glaux-link--current-uts ()
+  "Return current Unix timestamp."
+  (string-to-number (format-time-string "%s" (current-time))))
+
 ;;; org-glaux-core.el ends here
 (provide 'org-glaux-core)

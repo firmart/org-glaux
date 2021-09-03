@@ -567,6 +567,7 @@ Argument DESC: the link description."
        (org-glaux--global-prop-value (org-glaux--wiki-path-fpath wiki-path) "TITLE")
      desc)))
 
+;; TODO move into org-glaux-link.el
 (defun org-glaux--wiki-follow (wiki-path &optional no-history?)
   "Open or create if it doesn't exist an org-glaux page given its WIKI-PATH.
 
