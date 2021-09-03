@@ -98,7 +98,6 @@
 (org-link-set-parameters "https" :face #'org-glaux-link-http-face)
 
 ;;;; HTTP(s) Links Hash Table
-(defvar org-glaux-link-http-htbl (org-glaux-link-http-read-htbl))
 
 (defun org-glaux-link-http-read-htbl ()
   "Read `org-glaux-link-http-htbl-fpath'."
@@ -113,6 +112,15 @@
   (with-temp-buffer
     (insert (prin1-to-string org-glaux-link-http-htbl))
     (write-file org-glaux-link-http-htbl-fpath)))
+
+(defun org-glaux-link-http-init-htbl ()
+  "Init `org-glaux-link-http-htbl' if it's not done and return it."
+  (or org-glaux-link-http-htbl
+      (setq org-glaux-link-http-htbl
+	    (or (org-glaux-link-http-read-htbl)
+		(make-hash-table :test 'equal)))))
+
+(defvar org-glaux-link-http-htbl nil)
 
 (add-hook 'kill-emacs-hook #'org-glaux-link-http-save-htbl)
 ;;;; Org Link Dynamic Face
@@ -136,6 +144,7 @@
   (when (org-glaux--wiki-buffer-p (current-buffer))
     (let* ((context (org-element-context))
 	   (url (org-element-property :raw-link context))
+	   (htbl (org-glaux-link-http-init-htbl))
 	   (value (gethash url htbl))
 	   (status (and value (plist-get value :status)))
 	   (timeout (and value (plist-get value :timeout)))
@@ -151,7 +160,7 @@
 	       (org-glaux-link--http-puthash
 		url
 		(when timeout
-		  (max (* timeout 2) org-glaux-link-timeout-max))))
+		  (min (* timeout 2) org-glaux-link-http-timeout-max))))
 	    ;; otherwise, we use the last status
 	      (org-glaux-link--http-status2face status))
 	;; new url
@@ -163,8 +172,9 @@
 (defun org-glaux-link--http-status (url &optional timeout)
   "Return the relevant status resulting from the access of the URL."
   ;; url-file-exists-p: Certificate are always [s]ession-only
-  (let ((org-glaux-auto-answer '(("Continue connecting?" . ?s))))
-    (with-timeout ((or timeout 1) 'timeout)
+  (let ((org-glaux-auto-answer '(("Continue connecting?" . ?s)))
+	(timeout (or timeout 1)))
+    (with-timeout (timeout 'timeout)
       (condition-case _
 	  (if (url-file-exists-p url)
 	      'found
@@ -186,18 +196,18 @@
 
 (defun org-glaux-link--http-puthash (url &optional timeout)
   "Get the URL status based on TIMEOUT and put the result to `org-glaux-link-http-htbl'."
-  (let ((htbl (or org-glaux-link-http-htbl
-		  (setq org-glaux-link-http-htbl (make-hash-table :test 'equal))))
-	(status (org-glaux-link--http-status url timeout)))
+  (let ((htbl (org-glaux-link-http-init-htbl))
+	(status (org-glaux-link--http-status url timeout))
+	(timeout (or timeout 1)))
 
     (when (and (eq status 'timeout)
-	       (>= timeout org-glaux-link-timeout-max))
+	       (>= timeout org-glaux-link-http-timeout-max))
       (setq status 'not-found))
 
     (prog1 status
       (puthash url `(:status ,status
 		     :last-access ,(org-glaux-link--current-uts)
-		     :timeout (or timeout 1))
+		     :timeout ,timeout)
 	       htbl))))
 
 ;;; org-glaux-link.el ends here

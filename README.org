@@ -64,14 +64,14 @@ configuration can be found below.
   |-------------------------+--------------------------------------------------------|
 
 ** Known issues
-|----------+---------------------------------------------------------------|
-| Category | Issue                                                         |
-|----------+---------------------------------------------------------------|
-| ~vc~       | Performance issue during =org-glaux-vc-git-full-commit=         |
-| ~link~     | ~http~, ~https~, and ~file~ links ~:face~ property is (over)written   |
-| ~core~     | Rename, move pages, and fix internal links to keep them valid |
-| ~link~     | Some URL (/e.g./ Amazon) are mishighlighted for unknown reason. |
-|----------+---------------------------------------------------------------|
+|----------+---------------------------------------------------------------------|
+| Category | Issue                                                               |
+|----------+---------------------------------------------------------------------|
+| ~vc~       | Performance issue during =org-glaux-vc-git-full-commit=               |
+| ~link~     | ~http~, ~https~, and ~file~ links ~:face~ property is (over)written         |
+| ~core~     | Rename, move pages, and fix internal links to keep them valid       |
+| ~link~     | Some URL (/e.g./ Amazon) are mishighlighted due to ~url-file-exists-p~. |
+|----------+---------------------------------------------------------------------|
 
 ** TODOs
 
