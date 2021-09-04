@@ -95,7 +95,7 @@
 
 ;;;;; Http(s) link
 (org-link-set-parameters "http" :face #'org-glaux-link-http-face)
-(org-link-set-parameters "https" :face #'org-glaux-link-http-face)
+(org-link-set-parameters "https" :face #'org-glaux-link-https-face)
 
 ;;;; HTTP(s) Links Hash Table
 
@@ -138,37 +138,78 @@
   (let ((fpath (org-glaux--wiki-path-fpath wiki-path)))
     (org-glaux-link-generic-face fpath)))
 
-;; TODO test on URL needing authentication
 (defun org-glaux-link-http-face (link)
-  "Dynamic face for HTTP(S) LINK."
+  "Dynamic face for http LINK."
   (when (org-glaux--wiki-buffer-p (current-buffer))
-    (let* ((context (org-element-context))
-	   (url (org-element-property :raw-link context))
-	   (htbl (org-glaux-link-http-init-htbl))
+    (let ((url (concat "http:" link)))
+      (org-glaux-link--http-status2face
+       (org-glaux-link-http-htbl-status url)))))
+
+(defun org-glaux-link-https-face (link)
+  "Dynamic face for https LINK."
+  (when (org-glaux--wiki-buffer-p (current-buffer))
+    (let ((url (concat "https:" link)))
+      (org-glaux-link--http-status2face
+       (org-glaux-link-http-htbl-status url)))))
+
+;;;; Utilities
+(defun org-glaux-link-buffer-link-status (&optional buffer)
+  (interactive)
+  (let* ((buffer (or buffer (current-buffer)))
+	 (data
+	  (with-current-buffer buffer
+	    (org-element-map (org-element-parse-buffer)
+		'link
+	      (lambda (link)
+		(let ((type (org-element-property :type link))
+		      (raw-link (org-element-property :raw-link link)))
+		  (when (string-prefix-p "http" type)
+		    `(:url ,raw-link
+			   :status ,(org-glaux-link-http-htbl-status raw-link)))))))))
+    (prog1 data
+      (when (called-interactively-p 'any)
+	(let ((found-total 0)
+	      (timeout-total 0)
+	      (not-found-total 0))
+	  (cl-loop for d in data
+		   for status = (plist-get d :status)
+		   when (eq 'found status) do (setq found-total (1+ found-total))
+		   when (eq 'timeout status) do (setq timeout-total (1+ timeout-total))
+		   when (eq 'not-found status) do (setq not-found-total (1+ not-found-total)))
+	  (message "%S links status: found=%s, timeout=%s, not found=%s"
+		   buffer found-total timeout-total not-found-total))))))
+
+;;;; Internal
+;;;;; HTTP(s) Links Utilities
+;; TODO test on URL needing authentication
+(defun org-glaux-link-http-htbl-status (url &optional no-connection)
+  "Return the status of a URL, based on previous visits if there is any.
+
+If NO-CONNECTION is non-`nil', do not connect to URL but use
+`org-glaux-link-http-htbl' to obtain its status."
+    (let* ((htbl (org-glaux-link-http-init-htbl))
 	   (value (gethash url htbl))
 	   (status (and value (plist-get value :status)))
 	   (timeout (and value (plist-get value :timeout)))
 	   (last-access (and value (plist-get value :last-access)))
 	   (expired? (and value (org-glaux-link--http-status-expired-p last-access))))
-
       (if (and value
 	       (not expired?))
 	  ;; not expired nor cache url
-	  (if (eq status 'timeout)
+	  (if (and (eq status 'timeout)
+		   (not no-connection))
 	      ;; last status was timeout, try again with a higher timeout
-	      (org-glaux-link--http-status2face
-	       (org-glaux-link--http-puthash
-		url
-		(when timeout
-		  (min (* timeout 2) org-glaux-link-http-timeout-max))))
+		(org-glaux-link--http-puthash
+		 url
+		 (when timeout
+		   (min (* timeout 2) org-glaux-link-http-timeout-max)))
 	    ;; otherwise, we use the last status
-	      (org-glaux-link--http-status2face status))
+	      status)
 	;; new url
-	(org-glaux-link--http-status2face
-	 (org-glaux-link--http-puthash url))))))
+	(if no-connection
+	    'unknown
+	  (org-glaux-link--http-puthash url)))))
 
-;;;; Internal
-;;;;; HTTP(s) Links Utilities
 (defun org-glaux-link--http-status (url &optional timeout)
   "Return the relevant status resulting from the access of the URL."
   ;; url-file-exists-p: Certificate are always [s]ession-only
@@ -185,6 +226,7 @@
   "Given a HTTP STATUS, return the link font corresponding."
   (pcase status
     ('not-found 'org-glaux-link-not-found-face)
+    ('unknown 'org-link)
     ('found 'org-glaux-link-found-face)
     ('timeout 'org-glaux-link-http-timeout-face)))
 

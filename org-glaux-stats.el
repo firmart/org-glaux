@@ -58,6 +58,53 @@
 	    (cons f (apply #'org-glaux--get-file-links f link-type)))
 	  (org-glaux--pages-list)))
 
+;; TODO write better docstring
+;; TODO incorporate to org-glaux--show-wiki-stats
+;;;###autoload
+(defun org-glaux--get-all-http-status (&optional http-by-page https-by-page no-connection)
+  "Report http/https links status."
+  (interactive "i\ni\nP")
+  (let* ((https-by-page (or https-by-page (org-glaux--get-all-links-by-page "https")))
+	 (https-urls (append (mapcar (lambda (form)
+				       (mapcar
+					(lambda (link) (concat "https:" link))
+					(cdr form)))
+				     https-by-page)))
+	 (http-by-page (or http-by-page (org-glaux--get-all-links-by-page "http")))
+	 (http-urls (append (mapcar (lambda (form)
+				      (mapcar
+				       (lambda (link) (concat "http:" link))
+				       (cdr form)))
+				    http-by-page)))
+	 (all-urls (apply #'append (append http-urls https-urls)))
+	 (len (length all-urls))
+	 (progress-reporter (make-progress-reporter "Retrieve links status..." 1 len))
+	 (counter 1)
+	 (data (mapcar
+		(lambda (url)
+		  (progress-reporter-update progress-reporter
+					    (setq counter (1+ counter)))
+		  `(:url ,url
+			 :status ,(org-glaux-link-http-htbl-status url no-connection)))
+		all-urls)))
+    (prog1 data
+      (when (called-interactively-p 'any)
+	  (cl-loop for d in data
+		   for status = (plist-get d :status)
+		   with found-total = 0
+		   with timeout-total = 0
+		   with not-found-total = 0
+		   with unknown-total = 0
+		   when (eq 'found status) do (setq found-total (1+ found-total))
+		   when (eq 'timeout status) do (setq timeout-total (1+ timeout-total))
+		   when (eq 'not-found status) do (setq not-found-total (1+ not-found-total))
+		   when (and (not no-connection)
+			     (eq 'unknown status))
+		     do (setq unknown-total (1+ unknown-total))
+		   finally do (message "links status: found=%s, timeout=%s, not found=%s%s"
+				       found-total timeout-total not-found-total
+				       (format ", unknown=%s" unknown-total)))))))
+
 ;;;###autoload
 (defun org-glaux--get-all-links-count-by-page (&rest link-type)
   "Return a list of links count of type LINK-TYPE."
@@ -103,6 +150,9 @@ Only wiki pages having broken-links > 0 are in the alist."
 
 ;;;; Internal: Wiki Stats
 
+;; TODO Rename this function (drop wiki & make it public)
+;; TODO Dispatch into multiple (interactive functions)
+;; TODO Save Org page data in a file to greatly speed up the task
 ;;;###autoload
 (defun org-glaux--show-wiki-stats ()
   "Show current wiki statistics."
