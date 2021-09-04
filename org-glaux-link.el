@@ -140,17 +140,19 @@
 
 (defun org-glaux-link-http-face (link)
   "Dynamic face for http LINK."
-  (when (org-glaux--wiki-buffer-p (current-buffer))
+  (if (org-glaux--wiki-buffer-p (current-buffer))
     (let ((url (concat "http:" link)))
       (org-glaux-link--http-status2face
-       (org-glaux-link-http-htbl-status url)))))
+       (org-glaux-link-http-htbl-status url)))
+    'org-link))
 
 (defun org-glaux-link-https-face (link)
   "Dynamic face for https LINK."
-  (when (org-glaux--wiki-buffer-p (current-buffer))
+  (if (org-glaux--wiki-buffer-p (current-buffer))
     (let ((url (concat "https:" link)))
       (org-glaux-link--http-status2face
-       (org-glaux-link-http-htbl-status url)))))
+       (org-glaux-link-http-htbl-status url)))
+    'org-link))
 
 ;;;; Utilities
 (defun org-glaux-link-buffer-link-status (&optional buffer)
